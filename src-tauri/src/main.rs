@@ -5,31 +5,15 @@ mod commands;
 mod config;
 
 fn main() -> Result<(), ()> {
-    use std::fs::read;
-    use config::Config;
+    use config::ConfigManager;
 
     env_logger::init();
 
-    // TODO control config location by command line arg
-    let config = match read("config.json") {
-        Ok(bytes) => bytes,
-        Err(err) => {
-            log::error!("{}", err);
-            return Err(());
-        }
-    };
-
-    let config = match serde_json::from_slice::<Config>(&config) {
-        Ok(config) => config,
-        Err(err) => {
-            log::error!("{}", err);
-            return Err(());
-        }
-    };
-
-    panic!("{:#?}", config);
+    let config_manager = ConfigManager::new("../config.json");
+    config_manager.save();
 
     tauri::Builder::default()
+        .manage(config_manager)
         .invoke_handler(tauri::generate_handler![
             commands::keystone_correct
         ])
