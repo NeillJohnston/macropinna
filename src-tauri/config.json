@@ -1,0 +1,9 @@
+{
+    "name": "Neill",
+    "weather": {
+        "provider": "OpenWeatherMap",
+        "api_key": "",
+        "lat": 29.65,
+        "long": -82.32
+    }
+}
