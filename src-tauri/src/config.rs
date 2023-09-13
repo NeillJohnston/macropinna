@@ -1,12 +1,11 @@
 use serde::{Serialize, Deserialize};
-use std::{
-    path::{Path, PathBuf},
-    sync::RwLock,
-};
+use std::path::{Path, PathBuf};
+use std::sync::RwLock;
+// use tokio::sync::RwLock;
 
 pub struct ConfigManager {
     path: PathBuf,
-    config: RwLock<Config>
+    pub config: RwLock<Config>
 }
 
 impl ConfigManager {
@@ -106,13 +105,13 @@ impl<'a> VersionedDeserialize<'a> for () {
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct ConfigV1 {
     pub name: String,
     pub weather: Option<Weather>
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Weather {
     pub provider: WeatherProvider,
     pub api_key: String,
@@ -120,7 +119,7 @@ pub struct Weather {
     pub long: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum WeatherProvider {
     OpenWeatherMap
 }

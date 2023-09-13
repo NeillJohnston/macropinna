@@ -9,13 +9,16 @@ fn main() -> Result<(), ()> {
 
     env_logger::init();
 
+    // TODO test value here obvi
     let config_manager = ConfigManager::new("../config.json");
     config_manager.save();
 
     tauri::Builder::default()
         .manage(config_manager)
         .invoke_handler(tauri::generate_handler![
-            commands::keystone_correct
+            // commands::keystone_correct,
+            commands::get_config,
+            commands::get_weather,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

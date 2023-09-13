@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { config } from "$lib/config";
 	import Yapper from "./Yapper.svelte";
+    import { invoke } from '@tauri-apps/api';
 
     const heading = 'It\'s 88°F outside in Gainesville, FL.';
 
@@ -12,6 +13,10 @@
 
     const xAlignClass = $config.home.weather.xAlign;
     const yAlignClass = $config.home.weather.yAlign;
+
+    invoke('get_weather')
+        .then(console.log)
+        .catch(console.log);
 </script>
 
 <div id="weather" class={yAlignClass}>
