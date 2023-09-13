@@ -1,31 +1,39 @@
 <script lang="ts">
-	import { config } from "$lib/config";
+	import { layout } from "$lib/layout";
 	import Yapper from "./Yapper.svelte";
     import { invoke } from '@tauri-apps/api';
+    import { onMount } from "svelte";
 
-    const heading = 'It\'s 88°F outside in Gainesville, FL.';
+    let weather = {
+        heading: 'Fetching weather...',
+        subheadings: ['It might be sunny. It might be rainy. Who knows?']
+    };
 
-    const subheadings = [
-        'Sunset today is at 7:42pm.',
-        'Expect a low chance of rain until 5pm.',
-        'The overnight high is 80°F and the low is 74°F.'
-    ];
+    const xAlignClass = $layout.home.weather.xAlign;
+    const yAlignClass = $layout.home.weather.yAlign;
 
-    const xAlignClass = $config.home.weather.xAlign;
-    const yAlignClass = $config.home.weather.yAlign;
+    onMount(() => {
+        return setInterval(async () => {
+            const res: any = await invoke('get_weather');
+            if (!!res) {
+                // TODO should switch by provider in the future, right now this
+                // is hardcoded for OpenWeatherMap
+                const curr = res.list[0];
+                const next = res.list[1];
 
-    invoke('get_weather')
-        .then(console.log)
-        .catch(console.log);
+                const feelsLike = curr.main.feels_like;
+            }
+        }, 10 * 60_000);
+    });
 </script>
 
 <div id="weather" class={yAlignClass}>
     <div id="container" class={xAlignClass}>
-        <p>{heading}</p>
+        <p>{weather.heading}</p>
         <div class="space" />
         <div id="yapper">
             <Yapper
-                blurbs={subheadings}
+                blurbs={weather.subheadings}
                 cpm={800}
                 readDelayMs={10_000}
             />

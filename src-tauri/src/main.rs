@@ -18,6 +18,7 @@ fn main() -> Result<(), ()> {
         .invoke_handler(tauri::generate_handler![
             // commands::keystone_correct,
             commands::get_config,
+            commands::set_config,
             commands::get_weather,
         ])
         .run(tauri::generate_context!())

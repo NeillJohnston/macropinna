@@ -11,30 +11,29 @@ interface Widget {
 type XAlign = 'left' | 'center' | 'right';
 type YAlign = 'top' | 'middle' | 'bottom';
 
-interface Config {
-    name: string;
+interface Layout {
     home: {
         clock: {
-            enabled: boolean,
-            widget: Widget,
-            xAlign: XAlign,
-            yAlign: YAlign,
-        },
+            enabled: boolean;
+            widget: Widget;
+            xAlign: XAlign;
+            yAlign: YAlign;
+        };
         weather: {
-            enabled: boolean,
-            widget: Widget,
-            xAlign: XAlign,
-            yAlign: YAlign,
-        },
+            enabled: boolean;
+            widget: Widget;
+            xAlign: XAlign;
+            yAlign: YAlign;
+        };
         todo: {
-            enabled: boolean,
-            widget: Widget,
-            xAlign: XAlign,
-        },
-    }
+            enabled: boolean;
+            widget: Widget;
+            xAlign: XAlign;
+        };
+    };
 }
 
-export const config = writable({
+export const layout = writable({
     name: 'Neill',
     home: {
         clock: {
@@ -55,15 +54,4 @@ export const config = writable({
             xAlign: 'left',
         },
     }
-} as Config);
-
-export async function loadConfig(): Promise<void> {
-    // const _config = await invoke('load_config') as Config;
-    // config.set(_config);
-}
-
-export function saveConfig() {
-    // config.subscribe(config => {
-    //     invoke('save_config', { config });
-    // })
-}
+} as Layout);

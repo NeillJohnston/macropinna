@@ -1,7 +1,6 @@
 use serde::{Serialize, Deserialize};
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
-// use tokio::sync::RwLock;
 
 pub struct ConfigManager {
     path: PathBuf,
@@ -40,6 +39,11 @@ impl ConfigManager {
             log::error!("{}", err);
         }
     }
+    
+    // pub fn load(&self) {
+    //     let config = Self::_load(&self.path);
+    //     *self.config.write().unwrap() = config;
+    // }
 
     fn _load<P: AsRef<Path>>(path: P) -> Config {
         use std::fs::read;
@@ -59,11 +63,6 @@ impl ConfigManager {
                 panic!();
             }
         }
-    }
-    
-    pub fn load(&self) {
-        let config = Self::_load(&self.path);
-        *self.config.write().unwrap() = config;
     }
 }
 
@@ -108,7 +107,7 @@ impl<'a> VersionedDeserialize<'a> for () {
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct ConfigV1 {
     pub name: String,
-    pub weather: Option<Weather>
+    pub weather: Option<Weather>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

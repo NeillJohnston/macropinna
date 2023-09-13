@@ -22,14 +22,25 @@ pub fn get_config(config: State<'_, ConfigManager>) -> Config {
 }
 
 #[tauri::command]
-pub async fn get_weather(config: State<'_, ConfigManager>) -> Result<JsonValue, String> {
+pub fn set_config(config: State<'_, ConfigManager>, new_config: Config) {
+    *config.config.write().unwrap() = new_config;
+    config.save();
+}
+
+#[tauri::command]
+pub async fn get_weather(config: State<'_, ConfigManager>) -> Result<JsonValue, ()> {
     // TODO returning a JSON value is convenient, but causes unnecessary
     // conversions to/from string - 
     _get_weather(config)
         .await
-        .map_err(|err| err.to_string())
+        .map_err(|err| {
+            log::error!("Error while fetching weather: {}", err);
+            ()
+        })
 }
 
+// Helper function that returns an `anyhow` error, which gets discarded by the
+// actual command.
 async fn _get_weather(config: State<'_, ConfigManager>) -> anyhow::Result<JsonValue> {
     // Scoping required so that the compiler knows when `config` gets dropped
     // https://github.com/rust-lang/rust/issues/63768
