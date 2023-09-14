@@ -27,10 +27,14 @@ pub fn set_config(config: State<'_, ConfigManager>, new_config: Config) {
     config.save();
 }
 
+#[derive(serde::Serialize)]
+pub struct WeatherResponse {
+    pub current: JsonValue,
+    pub forecast: JsonValue
+}
+
 #[tauri::command]
-pub async fn get_weather(config: State<'_, ConfigManager>) -> Result<JsonValue, ()> {
-    // TODO returning a JSON value is convenient, but causes unnecessary
-    // conversions to/from string - 
+pub async fn get_weather(config: State<'_, ConfigManager>) -> Result<WeatherResponse, ()> {
     _get_weather(config)
         .await
         .map_err(|err| {
@@ -41,34 +45,46 @@ pub async fn get_weather(config: State<'_, ConfigManager>) -> Result<JsonValue, 
 
 // Helper function that returns an `anyhow` error, which gets discarded by the
 // actual command.
-async fn _get_weather(config: State<'_, ConfigManager>) -> anyhow::Result<JsonValue> {
+async fn _get_weather(config: State<'_, ConfigManager>) -> anyhow::Result<WeatherResponse> {
+    use futures::try_join;
+
     // Scoping required so that the compiler knows when `config` gets dropped
     // https://github.com/rust-lang/rust/issues/63768
-    let url;
-    {
+    let weather = {
         let config = config.config.read().unwrap();
-        url =
-            if let Some(weather) = &config.weather {
-                match weather.provider {
-                    WeatherProvider::OpenWeatherMap => {
-                        format!(
-                            "https://api.openweathermap.org/data/2.5/forecast?lat={}&lon={}&appid={}",
-                            weather.lat,
-                            weather.long,
-                            weather.api_key
-                        )
-                    }
-                }
-            }
-            else {
-                anyhow::bail!("weather provider not configured");
-            };
+        
+        if let Some(weather) = &config.weather {
+            weather.clone()
+        }
+        else {
+            anyhow::bail!("weather provider not configured");
+        }
+    };
+
+    match weather.provider {
+        WeatherProvider::OpenWeatherMap => {
+            let current_url = format!(
+                "https://api.openweathermap.org/data/2.5/weather?lat={}&lon={}&appid={}",
+                weather.lat,
+                weather.long,
+                weather.api_key
+            );
+            let forecast_url = format!(
+                "https://api.openweathermap.org/data/2.5/forecast?lat={}&lon={}&appid={}",
+                weather.lat,
+                weather.long,
+                weather.api_key
+            );
+
+            let (current, forecast) = try_join!(
+                reqwest::get(current_url),
+                reqwest::get(forecast_url)
+            )?;
+
+            let current = current.json().await?;
+            let forecast = forecast.json().await?;
+
+            Ok(WeatherResponse { current, forecast })
+        }
     }
-
-    let res = reqwest::get(url)
-        .await?
-        .json()
-        .await?;
-
-    Ok(res)
 }

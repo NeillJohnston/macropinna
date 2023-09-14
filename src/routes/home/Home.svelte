@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { config } from "$lib/config";
+	import { layout as _layout } from "$lib/layout";
 	import Clock from "./widgets/Clock.svelte";
 	import Todo from "./widgets/Todo.svelte";
 	import Weather from "./widgets/Weather.svelte";
@@ -7,7 +7,7 @@
     const GRID_X = 12;
     const GRID_Y = 12;
 
-    const layout = $config.home;
+    const layout = $_layout.home;
 
     const portionX = (n: number) => 100.0 * n / GRID_X;
     const portionY = (n: number) => 100.0 * n / GRID_Y;

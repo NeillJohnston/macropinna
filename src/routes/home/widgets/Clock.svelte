@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { config } from '$lib/config';
-    import * as strftime from 'strftime';
+	import { layout } from '$lib/layout';
+    import strftime from 'strftime';
     import { onMount } from 'svelte';
 
     const timeFormat = '%A, %b %e%n%l:%M%P';
 
-    // @ts-ignore: strftime is a function actually
     let timeString = strftime(timeFormat);
     onMount(() => {
         const updateClock = setInterval(() => {
@@ -16,8 +15,8 @@
         return updateClock;
     });
 
-    const xAlignClass = $config.home.clock.xAlign;
-    const yAlignClass = $config.home.clock.yAlign;
+    const xAlignClass = $layout.home.clock.xAlign;
+    const yAlignClass = $layout.home.clock.yAlign;
 </script>
 
 <div id="clock" class={yAlignClass}>
