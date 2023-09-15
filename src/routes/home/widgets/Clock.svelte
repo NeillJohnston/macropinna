@@ -3,6 +3,7 @@
     import strftime from 'strftime';
     import { onMount } from 'svelte';
 
+    // TODO unhardcode
     const timeFormat = '%A, %b %e%n%l:%M%P';
 
     let timeString = strftime(timeFormat);

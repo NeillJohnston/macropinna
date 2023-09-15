@@ -6,12 +6,6 @@
     import Qty from 'js-quantities';
     import strftime from 'strftime';
 
-    let weather = {
-        heading: 'Fetching weather...',
-        time: '',
-        subheadings: ['It might be sunny. It might be rainy. Who knows?']
-    };
-
     const xAlignClass = $layout.home.weather.xAlign;
     const yAlignClass = $layout.home.weather.yAlign;
 
@@ -19,9 +13,16 @@
         Qty(x, from).to(to).scalar.toFixed(d ?? 0)
     );
 
+    // TODO unhardcode time format
     const timeFmt = (t: number) => (
         strftime('%l:%M%P', new Date(1000 * t))
     );
+
+    let weather = {
+        heading: 'Fetching weather...',
+        time: 'never',
+        subheadings: ['It might be sunny. It might be rainy. Who knows?']
+    };
 
     onMount(() => {
         const refreshWeather = async () => {
@@ -58,6 +59,7 @@
 
         refreshWeather();
 
+        // Just refresh every 10 minutes, should be fine
         return setInterval(refreshWeather, 10 * 60_000);
     });
 </script>

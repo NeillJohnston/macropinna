@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Screen from './Screen.svelte';
     import Home from './home/Home.svelte';
+    import Launcher from './launcher/Launcher.svelte';
 
     let screenIndex = 1;
 
@@ -31,10 +32,7 @@
         onDown={() => shift(1)}
         bottom
     >
-        <div class="under-construction">
-            <div style="height: 50%;" />
-            <p>(Under construction)</p>
-        </div>
+        <Launcher />
     </Screen>
 </div>
 
