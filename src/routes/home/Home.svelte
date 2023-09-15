@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { layout as _layout } from "$lib/layout";
+	import { onMount } from "svelte";
 	import Clock from "./widgets/Clock.svelte";
 	import Todo from "./widgets/Todo.svelte";
 	import Weather from "./widgets/Weather.svelte";
+    import { joystick } from '$lib/joystick';
 
     const GRID_X = 12;
     const GRID_Y = 12;

@@ -2,18 +2,51 @@
 	import Screen from './Screen.svelte';
     import Home from './home/Home.svelte';
     import Launcher from './launcher/Launcher.svelte';
+    import { Direction, joystick } from '$lib/joystick';
+	import { onMount } from 'svelte';
 
-    let screenIndex = 1;
+    let screenIndex = 1
 
-    const shift = (delta: number) => {
-        screenIndex += delta;
-    };
+    const goUp = () => {
+        screenIndex -= 1;
+    }
+
+    const goDown = () => {
+        screenIndex += 1;
+    }
+
+    onMount(() => {
+        joystick.register('settings', {
+            down: {
+                id: 'home',
+                action: goDown
+            }
+        });
+
+        joystick.register('home', {
+            up: {
+                id: 'settings',
+                action: goUp
+            },
+            down: {
+                id: 'launcher',
+                action: goDown
+            }
+        });
+
+        joystick.register('launcher', {
+            up: {
+                id: 'home',
+                action: goUp
+            }
+        });
+    });
 </script>
 
 <div id="page" style={`top: ${-screenIndex * 100}vh;`}>
     <Screen
-        onUp={() => shift(-1)}
-        onDown={() => shift(1)}
+        onUp={() => {}}
+        onDown={joystick.goFromCb('settings', Direction.Down)}
         top
     >
         <div class="under-construction">
@@ -22,14 +55,14 @@
         </div>
     </Screen>
     <Screen
-        onUp={() => shift(-1)}
-        onDown={() => shift(1)}
+        onUp={joystick.goFromCb('home', Direction.Up)}
+        onDown={joystick.goFromCb('home', Direction.Down)}
     >
         <Home />
     </Screen>
     <Screen
-        onUp={() => shift(-1)}
-        onDown={() => shift(1)}
+        onUp={joystick.goFromCb('launcher', Direction.Up)}
+        onDown={() => {}}
         bottom
     >
         <Launcher />

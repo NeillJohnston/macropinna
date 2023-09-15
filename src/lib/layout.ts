@@ -1,4 +1,3 @@
-// import { invoke } from '@tauri-apps/api';
 import { writable } from 'svelte/store';
 
 interface Widget {

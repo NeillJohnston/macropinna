@@ -1,3 +1,46 @@
+<script lang="ts">
+    import { Direction, joystick } from '$lib/joystick';
+	import { onMount } from 'svelte';
+
+    const handleRouting = (event: KeyboardEvent) => {
+        let dir: Direction;
+        switch (event.key) {
+            case 'ArrowUp':
+                dir = Direction.Up;
+                break;
+            case 'ArrowDown':
+                dir = Direction.Down;
+                break;
+            case 'ArrowLeft':
+                dir = Direction.Left;
+                break;
+            case 'ArrowRight':
+                dir = Direction.Right;
+                break;
+            case ' ':
+                dir = Direction.Enter;
+                break;
+            case 'Escape':
+                dir = Direction.Exit;
+                break;
+            default:
+                return;
+        }
+
+        joystick.go(dir);
+    }
+
+    onMount(() => {
+        joystick.set(['home']);
+
+        document.addEventListener('keydown', handleRouting);
+
+        return () => {
+            document.removeEventListener('keydown', handleRouting);
+        }
+    })
+</script>
+
 <div id='app-root'>
     <!-- <div class='dim-edge' /> -->
     <slot />
@@ -45,6 +88,7 @@
         width: 100%;
         height: 100%;
         background-color: #000;
+        outline: none;
     }
 
     /* .dim-edge {
