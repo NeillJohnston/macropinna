@@ -6,7 +6,7 @@
     "distDir": "../build"
   },
   "package": {
-    "productName": "projector-ambience",
+    "productName": "Macropinna",
     "version": "0.1.0"
   },
   "tauri": {
