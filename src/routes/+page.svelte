@@ -33,13 +33,6 @@
                 action: goDown
             }
         });
-
-        joystick.register('launcher', {
-            up: {
-                id: 'home',
-                action: goUp
-            }
-        });
     });
 </script>
 
@@ -65,7 +58,9 @@
         onDown={() => {}}
         bottom
     >
-        <Launcher />
+        <Launcher
+            goUp={goUp}
+        />
     </Screen>
 </div>
 

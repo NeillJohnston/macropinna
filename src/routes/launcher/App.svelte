@@ -1,9 +1,17 @@
 <script lang="ts">
     export let name: string;
     export let selected: boolean;
+    export let size: string;
+    export let margin: string;
 </script>
 
-<div id="app" class:selected={selected}>
+<div
+    id="app"
+    class:selected={selected}
+    style:width={size}
+    style:height={size}
+    style:margin-right={margin}
+>
     <div id="inner">
         {name}
     </div>
@@ -12,14 +20,12 @@
 <style>
     #app {
         box-sizing: border-box;
-        width: 300px;
-        height: 300px;
-        padding: 50px;
+        padding: 80px;
         opacity: 50%;
 
         transition:
-            padding ease 0.5s,
-            opacity ease 0.5s;
+            padding ease 0.4s,
+            opacity ease 0.4s;
     }
 
     #app.selected {
