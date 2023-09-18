@@ -108,6 +108,7 @@ impl<'a> VersionedDeserialize<'a> for () {
 pub struct ConfigV1 {
     pub name: String,
     pub weather: Option<Weather>,
+    pub audio_device: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

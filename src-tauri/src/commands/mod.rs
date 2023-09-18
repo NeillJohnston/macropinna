@@ -1,4 +1,4 @@
-use crate::config::*;
+use crate::{config::*, audio_visualizer::*};
 
 use serde_json::Value as JsonValue;
 use tauri::State;
@@ -87,4 +87,15 @@ async fn _get_weather(config: State<'_, ConfigManager>) -> anyhow::Result<Weathe
             Ok(WeatherResponse { current, forecast })
         }
     }
+}
+
+#[derive(serde::Serialize)]
+pub struct AudioSpectrumResponse {
+    pub data: Vec<f32>
+}
+
+#[tauri::command]
+pub fn get_audio_spectrum(audio_visualizer: State<'_, AudioVisualizerManager>) -> AudioSpectrumResponse {
+    let data = audio_visualizer.data.lock().unwrap();
+    AudioSpectrumResponse { data: data.data.clone() }
 }
