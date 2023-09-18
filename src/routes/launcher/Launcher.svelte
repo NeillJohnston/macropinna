@@ -45,9 +45,9 @@
 </script>
 
 <div id="page">
+    <div id="dim-left" />
+    <div id="dim-right" />
     <div id="carousel" style:width={size}>
-        <div id="dim-left" />
-        <div id="dim-right" />
         <div id="container" style:left={offset}>
             {#each apps as app, _index}
             <App
@@ -63,6 +63,7 @@
 
 <style>
     #page {
+        position: relative;
         width: 100%;
         height: 100%;
         display: flex;
@@ -72,7 +73,6 @@
 
     #carousel {
         position: relative;
-        z-index: 0;
     }
 
     #container {
@@ -85,21 +85,21 @@
     }
 
     #dim-left {
-        position: fixed;
+        position: absolute;
         top: 0;
         left: 0;
         width: 120px;
-        height: 100vw;
+        height: 100%;
         background: linear-gradient(to right, black, rgb(0, 0, 0, 0));
         z-index: 1;
     }
 
     #dim-right {
-        position: fixed;
+        position: absolute;
         top: 0;
         right: 0;
         width: 120px;
-        height: 100vw;
+        height: 100%;
         background: linear-gradient(to left, black, rgb(0, 0, 0, 0));
         z-index: 1;
     }
