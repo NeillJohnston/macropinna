@@ -108,7 +108,7 @@ impl<'a> VersionedDeserialize<'a> for () {
 pub struct ConfigV1 {
     pub name: String,
     pub weather: Option<Weather>,
-    pub audio_device: String,
+    pub audio_device: AudioVisualizer,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -122,6 +122,18 @@ pub struct Weather {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum WeatherProvider {
     OpenWeatherMap
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AudioVisualizer {
+    pub name: String,
+    pub is_input: bool
+}
+
+impl Default for AudioVisualizer {
+    fn default() -> Self {
+        AudioVisualizer { name: "default".to_string(), is_input: false }
+    }
 }
 
 impl<'a> VersionedDeserialize<'a> for ConfigV1 {

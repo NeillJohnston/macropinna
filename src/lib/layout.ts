@@ -29,6 +29,10 @@ interface Layout {
             widget: Widget;
             xAlign: XAlign;
         };
+        audioVisualizer: {
+            enabled: boolean;
+            widget: Widget;
+        };
     };
 }
 
@@ -51,6 +55,10 @@ export const layout = writable({
             enabled: true,
             widget: { x: 6, y: 3, w: 6, h: 9 },
             xAlign: 'left',
+        },
+        audioVisualizer: {
+            enabled: true,
+            widget: { x: 0, y: 3, w: 6, h: 9 }
         },
     }
 } as Layout);

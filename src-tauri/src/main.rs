@@ -18,9 +18,13 @@ fn _main() -> anyhow::Result<()> {
     // TODO test value here obvi
     let config_manager = ConfigManager::new("../config.json");
     
+    let config = config_manager.config.read().unwrap();
     let audio_visualizer_manager = AudioVisualizerManager::new(
-        &config_manager.config.read().unwrap().audio_device
+        &config.audio_device.name,
+        config.audio_device.is_input
     )?;
+
+    drop(config);
 
     tauri::Builder::default()
         .manage(config_manager)

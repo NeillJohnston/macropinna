@@ -5,6 +5,7 @@
 	import Todo from "./widgets/Todo.svelte";
 	import Weather from "./widgets/Weather.svelte";
     import { joystick } from '$lib/joystick';
+	import AudioVisualizer from "./widgets/AudioVisualizer.svelte";
 
     const GRID_X = 12;
     const GRID_Y = 12;
@@ -57,6 +58,11 @@
     {#if layout.todo.enabled}
     <div class="box" style={widgetCoords(layout.todo.widget)}>
         <Todo />
+    </div>
+    {/if}
+    {#if layout.audioVisualizer.enabled}
+    <div class="box" style={widgetCoords(layout.audioVisualizer.widget)}>
+        <AudioVisualizer />
     </div>
     {/if}
 </div>
