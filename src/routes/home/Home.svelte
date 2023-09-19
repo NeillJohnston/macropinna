@@ -99,7 +99,7 @@
             {/if}
             {#if screen.audioVisualizer}
             <div class="box" style={widgetCoords(screen.audioVisualizer.coords)}>
-                <AudioVisualizer />
+                <AudioVisualizer props={screen.audioVisualizer} />
             </div>
             {/if}
             {#if screen.player}

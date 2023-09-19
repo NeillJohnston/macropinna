@@ -36,7 +36,9 @@ export interface Todo {
     xAlign: XAlign;
 }
 
-export interface AudioVisualizer {}
+export interface AudioVisualizer {
+    yAlign: YAlign;
+}
 
 export interface Player {}
 
@@ -61,10 +63,11 @@ export const layout = writable({
         },
         {
             audioVisualizer: {
-                coords: { x: 2, y: 3, w: 8, h: 7 }
+                coords: { x: 2, y: 3, w: 8, h: 9 },
+                yAlign: 'top'
             },
             player: {
-                coords: { x:2, y: 1, w: 8, h: 2 }
+                coords: { x: 2, y: 0, w: 8, h: 3 }
             }
         }
     ]

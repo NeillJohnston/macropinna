@@ -8,8 +8,7 @@ use std::sync::{mpsc, Arc, Mutex};
 const HEARING_RANGE: (f32, f32) = (20.0, 20_000.0);
 // Just outside the hearing range (20Hz = 31.7mel, 20kHz = 3816.9mel)
 const MEL_RANGE: (u32, u32) = (30, 3820);
-// Results in a few hundred data points, can be further consolidated on the frontend
-const MEL_RESOLUTION: u32 = 10;
+const MEL_RESOLUTION: u32 = 1;
 
 pub struct AudioVisualizerManager {
     pub data: Arc<Mutex<Data>>,
@@ -97,11 +96,8 @@ impl Data {
         let mut curr = self.range.0 + self.resolution;
         let mut index = 0;
         let mut accum = 0.0;
-        // let mut sum = 0.0;
         for (mel, val) in spectrum.to_mel_map().into_iter() {
-            // sum += val;
-
-            // "Max index" check not be needed since ranges are just const now
+            // "Max index" check might not be needed since ranges are just const now
             while mel > curr && index < self.data.len() - 1 {
                 self.data[index] =
                     accum * self.smoothing +
@@ -118,8 +114,6 @@ impl Data {
         self.data[index] =
             accum * self.smoothing +
             self.data[index] * (1.0 - self.smoothing);
-
-        // log::debug!("Audio sum: {}", sum);
     }
 }
 

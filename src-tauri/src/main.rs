@@ -6,7 +6,7 @@ mod commands;
 mod config;
 
 fn main() -> Result<(), ()> {
-    _main().map_err(|err| ())
+    _main().map_err(|_err| ())
 }
 
 fn _main() -> anyhow::Result<()> {
