@@ -7,6 +7,7 @@
     import { Direction, joystick } from '$lib/joystick';
 	import AudioVisualizer from "./widgets/AudioVisualizer.svelte";
 	import Screen from '../Screen.svelte';
+	import Player from "./widgets/Player.svelte";
 
     export let goUp: () => void;
     export let goDown: () => void;
@@ -99,6 +100,11 @@
             {#if screen.audioVisualizer}
             <div class="box" style={widgetCoords(screen.audioVisualizer.coords)}>
                 <AudioVisualizer />
+            </div>
+            {/if}
+            {#if screen.player}
+            <div class="box" style={widgetCoords(screen.player.coords)}>
+                <Player />
             </div>
             {/if}
         </div>

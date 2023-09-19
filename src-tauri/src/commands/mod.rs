@@ -1,5 +1,6 @@
 use crate::{config::*, audio_visualizer::*};
 
+use serde::Serialize;
 use serde_json::Value as JsonValue;
 use tauri::State;
 
@@ -27,7 +28,7 @@ pub fn set_config(config: State<'_, ConfigManager>, new_config: Config) {
     config.save();
 }
 
-#[derive(serde::Serialize)]
+#[derive(Serialize)]
 pub struct WeatherResponse {
     pub current: JsonValue,
     pub forecast: JsonValue
@@ -89,7 +90,7 @@ async fn _get_weather(config: State<'_, ConfigManager>) -> anyhow::Result<Weathe
     }
 }
 
-#[derive(serde::Serialize)]
+#[derive(Serialize)]
 pub struct AudioSpectrumResponse {
     pub data: Vec<f32>
 }
@@ -98,4 +99,39 @@ pub struct AudioSpectrumResponse {
 pub fn get_audio_spectrum(audio_visualizer: State<'_, AudioVisualizerManager>) -> AudioSpectrumResponse {
     let data = audio_visualizer.data.lock().unwrap();
     AudioSpectrumResponse { data: data.data.clone() }
+}
+
+#[derive(Serialize)]
+pub struct PlayerMetadataResponse {
+    album_name: Option<String>,
+    disc_number: Option<i32>,
+    track_title: Option<String>,
+    track_number: Option<i32>,
+    track_artists: Option<Vec<String>>,
+    track_length_us: Option<u64>,
+    art_url: Option<String>,
+}
+
+#[tauri::command]
+pub fn get_player_metadata() -> Option<PlayerMetadataResponse> {
+    use mpris::PlayerFinder;
+
+    let player = PlayerFinder::new()
+        .ok()?
+        .find_active()
+        .ok()?;
+
+    let metadata = player
+        .get_metadata()
+        .ok()?;
+
+    Some(PlayerMetadataResponse {
+        album_name: metadata.album_name().map(|s| s.into()),
+        disc_number: metadata.disc_number(),
+        track_title: metadata.title().map(|s| s.into()),
+        track_number: metadata.track_number(),
+        track_artists: metadata.artists().map(|v| v.into_iter().map(|s| s.into()).collect()),
+        track_length_us: metadata.length_in_microseconds(),
+        art_url: metadata.art_url().map(|s| s.into()),
+    })
 }

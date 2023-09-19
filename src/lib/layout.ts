@@ -9,6 +9,7 @@ interface Layout {
         weather?: Coords & Weather;
         todo?: Coords & Todo;
         audioVisualizer?: Coords & AudioVisualizer;
+        player?: Coords & Player;
     }[];
 }
 
@@ -35,8 +36,9 @@ export interface Todo {
     xAlign: XAlign;
 }
 
-export interface AudioVisualizer {
-}
+export interface AudioVisualizer {}
+
+export interface Player {}
 
 export const layout = writable({
     name: 'Neill',
@@ -61,6 +63,9 @@ export const layout = writable({
             audioVisualizer: {
                 coords: { x: 2, y: 3, w: 8, h: 7 }
             },
+            player: {
+                coords: { x:2, y: 1, w: 8, h: 2 }
+            }
         }
     ]
 } as Layout);

@@ -35,6 +35,7 @@ fn _main() -> anyhow::Result<()> {
             commands::set_config,
             commands::get_weather,
             commands::get_audio_spectrum,
+            commands::get_player_metadata,
         ])
         .run(tauri::generate_context!())?;
 
