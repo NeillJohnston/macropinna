@@ -27,9 +27,7 @@
 
 <div id="page" style={`top: ${-screenIndex * 100}vh;`}>
     <Screen
-        onUp={() => {}}
         onDown={joystick.goFromCb('settings', Direction.Down)}
-        top
     >
         <div class="under-construction">
             <div style="height: 50%;" />
@@ -47,8 +45,6 @@
     </Screen>
     <Screen
         onUp={joystick.goFromCb('launcher', Direction.Up)}
-        onDown={() => {}}
-        bottom
     >
         <Launcher
             goUp={goUp}

@@ -1,16 +1,15 @@
 <script lang="ts">
     import Icon from '@iconify/svelte';
 
-    export let onUp: () => void;
-    export let onDown: () => void;
-    // Whether this screen is the top/bottom in the list
-    export let top = false;
-    export let bottom = false;
+    export let onUp: undefined | (() => void) = undefined;
+    export let onDown: undefined | (() => void) = undefined;
+    export let onLeft: undefined | (() => void) = undefined;
+    export let onRight: undefined | (() => void) = undefined;
 </script>
 
 <div id="screen">
     <div class='nav-arrow'>
-        {#if !top}
+        {#if onUp}
         <a on:click={onUp}>
             <Icon icon='carbon:chevron-up' inline />
         </a>
@@ -20,7 +19,7 @@
         <slot />
     </div>
     <div class='nav-arrow'>
-        {#if !bottom}
+        {#if onDown}
         <a on:click={onDown}>
             <Icon icon='carbon:chevron-down' inline/>
         </a>
