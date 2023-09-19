@@ -33,11 +33,9 @@
                 action: goUp
             },
             left: {
-                id: 'launcher',
                 action: () => { index = (apps.length + index - 1) % apps.length; }
             },
             right: {
-                id: 'launcher',
                 action: () => { index = (apps.length + index + 1) % apps.length; }
             }
         });

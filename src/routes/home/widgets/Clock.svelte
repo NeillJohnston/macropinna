@@ -1,7 +1,9 @@
 <script lang="ts">
-	import { layout } from '$lib/layout';
+	import type { Clock } from '$lib/layout';
     import strftime from 'strftime';
     import { onMount } from 'svelte';
+
+    export let props: Clock;
 
     // TODO unhardcode
     const timeFormat = '%A, %b %e%n%l:%M%P';
@@ -16,8 +18,8 @@
         return updateClock;
     });
 
-    const xAlignClass = $layout.home.clock.xAlign;
-    const yAlignClass = $layout.home.clock.yAlign;
+    const xAlignClass = props.xAlign;
+    const yAlignClass = props.yAlign;
 </script>
 
 <div id="clock" class={yAlignClass}>

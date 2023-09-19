@@ -3,7 +3,7 @@ import { writable } from 'svelte/store';
 export const nav = writable('/');
 
 interface Target {
-    id: string;
+    id?: string;
     action?: () => void;
 }
 
@@ -97,7 +97,7 @@ class Joystick {
             this.stack.push(curr);
         }
 
-        this.stack.push(target.id);
+        this.stack.push(target.id ?? curr);
         if (target.action) {
             target.action();
         }

@@ -1,13 +1,15 @@
 <script lang="ts">
-	import { layout } from "$lib/layout";
+	import type { Weather } from "$lib/layout";
 	import Yapper from "./Yapper.svelte";
     import { invoke } from '@tauri-apps/api';
     import { onMount } from "svelte";
     import Qty from 'js-quantities';
     import strftime from 'strftime';
 
-    const xAlignClass = $layout.home.weather.xAlign;
-    const yAlignClass = $layout.home.weather.yAlign;
+    export let props: Weather;
+
+    const xAlignClass = props.xAlign;
+    const yAlignClass = props.yAlign;
 
     const fmt = (x: number, from: string, to: string, d?: number): string => (
         Qty(x, from).to(to).scalar.toFixed(d ?? 0)

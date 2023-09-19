@@ -22,17 +22,6 @@
                 action: goDown
             }
         });
-
-        joystick.register('home', {
-            up: {
-                id: 'settings',
-                action: goUp
-            },
-            down: {
-                id: 'launcher',
-                action: goDown
-            }
-        });
     });
 </script>
 
@@ -51,7 +40,10 @@
         onUp={joystick.goFromCb('home', Direction.Up)}
         onDown={joystick.goFromCb('home', Direction.Down)}
     >
-        <Home />
+        <Home
+            goUp={goUp}
+            goDown={goDown}
+        />
     </Screen>
     <Screen
         onUp={joystick.goFromCb('launcher', Direction.Up)}

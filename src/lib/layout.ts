@@ -1,64 +1,66 @@
 import { writable } from 'svelte/store';
 
-interface Widget {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-}
-
 type XAlign = 'left' | 'center' | 'right';
 type YAlign = 'top' | 'middle' | 'bottom';
 
 interface Layout {
     home: {
-        clock: {
-            enabled: boolean;
-            widget: Widget;
-            xAlign: XAlign;
-            yAlign: YAlign;
-        };
-        weather: {
-            enabled: boolean;
-            widget: Widget;
-            xAlign: XAlign;
-            yAlign: YAlign;
-        };
-        todo: {
-            enabled: boolean;
-            widget: Widget;
-            xAlign: XAlign;
-        };
-        audioVisualizer: {
-            enabled: boolean;
-            widget: Widget;
-        };
-    };
+        clock?: Coords & Clock;
+        weather?: Coords & Weather;
+        todo?: Coords & Todo;
+        audioVisualizer?: Coords & AudioVisualizer;
+    }[];
+}
+
+interface Coords {
+    coords: {
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+    }
+}
+
+export interface Clock {
+    xAlign: XAlign;
+    yAlign: YAlign;
+}
+
+export interface Weather {
+    xAlign: XAlign;
+    yAlign: YAlign;
+}
+
+export interface Todo {
+    xAlign: XAlign;
+}
+
+export interface AudioVisualizer {
 }
 
 export const layout = writable({
     name: 'Neill',
-    home: {
-        clock: {
-            enabled: true,
-            widget: { x: 0, y: 0, w: 6, h: 3 },
-            xAlign: 'right',
-            yAlign: 'middle'
+    home: [
+        {
+            clock: {
+                coords: { x: 0, y: 0, w: 6, h: 3 },
+                xAlign: 'right',
+                yAlign: 'middle'
+            },
+            weather: {
+                coords: { x: 6, y: 0, w: 6, h: 3 },
+                xAlign: 'left',
+                yAlign: 'middle'
+            },
+            todo: {
+                coords: { x: 6, y: 3, w: 6, h: 9 },
+                xAlign: 'left',
+            },
         },
-        weather: {
-            enabled: true,
-            widget: { x: 6, y: 0, w: 6, h: 3 },
-            xAlign: 'left',
-            yAlign: 'middle'
-        },
-        todo: {
-            enabled: true,
-            widget: { x: 6, y: 3, w: 6, h: 9 },
-            xAlign: 'left',
-        },
-        audioVisualizer: {
-            enabled: true,
-            widget: { x: 0, y: 3, w: 6, h: 9 }
-        },
-    }
+        {
+            audioVisualizer: {
+                coords: { x: 2, y: 3, w: 8, h: 7 }
+            },
+        }
+    ]
 } as Layout);

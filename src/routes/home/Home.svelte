@@ -7,10 +7,14 @@
     import { joystick } from '$lib/joystick';
 	import AudioVisualizer from "./widgets/AudioVisualizer.svelte";
 
+    export let goUp: () => void;
+    export let goDown: () => void;
+
     const GRID_X = 12;
     const GRID_Y = 12;
 
-    const layout = $_layout.home;
+    let index = 0;
+    $: layout = $_layout.home[index];
 
     const portionX = (n: number) => 100.0 * n / GRID_X;
     const portionY = (n: number) => 100.0 * n / GRID_Y;
@@ -31,6 +35,25 @@
     const grid = false;
     const xRange = new Array(GRID_X);
     const yRange = new Array(GRID_Y);
+
+    onMount(() => {
+        joystick.register('home', {
+            up: {
+                id: 'settings',
+                action: goUp
+            },
+            down: {
+                id: 'launcher',
+                action: goDown
+            },
+            left: {
+                action: () => { index = (index - 1 + $_layout.home.length) % $_layout.home.length; }
+            },
+            right: {
+                action: () => { index = (index + 1) % $_layout.home.length; }
+            },
+        });
+    });
 </script>
 
 <div id="page">
@@ -45,23 +68,23 @@
         {/each}
     </div>
     {/if}
-    {#if layout.clock.enabled}
-    <div class="box" style={widgetCoords(layout.clock.widget)}>
-        <Clock />
+    {#if layout.clock}
+    <div class="box" style={widgetCoords(layout.clock.coords)}>
+        <Clock props={layout.clock} />
     </div>
     {/if}
-    {#if layout.weather.enabled}
-    <div class="box" style={widgetCoords(layout.weather.widget)}>
-        <Weather />
+    {#if layout.weather}
+    <div class="box" style={widgetCoords(layout.weather.coords)}>
+        <Weather props={layout.weather} />
     </div>
     {/if}
-    {#if layout.todo.enabled}
-    <div class="box" style={widgetCoords(layout.todo.widget)}>
+    {#if layout.todo}
+    <div class="box" style={widgetCoords(layout.todo.coords)}>
         <Todo />
     </div>
     {/if}
-    {#if layout.audioVisualizer.enabled}
-    <div class="box" style={widgetCoords(layout.audioVisualizer.widget)}>
+    {#if layout.audioVisualizer}
+    <div class="box" style={widgetCoords(layout.audioVisualizer.coords)}>
         <AudioVisualizer />
     </div>
     {/if}
