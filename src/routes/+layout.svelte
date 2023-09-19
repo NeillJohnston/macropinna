@@ -90,26 +90,4 @@
         background-color: #000;
         outline: none;
     }
-
-    /* .dim-edge {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, #000, rgba(0, 0, 0, 0) 10%, rgba(0, 0, 0, 0) 90%, #000);
-        z-index: 0;
-    }
-
-    .background-content {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-    }
-
-    .foreground-content {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-    } */
 </style>

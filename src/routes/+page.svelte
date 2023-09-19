@@ -34,15 +34,10 @@
             <p>(Under construction)</p>
         </div>
     </Screen>
-    <Screen
-        onUp={joystick.goFromCb('home', Direction.Up)}
-        onDown={joystick.goFromCb('home', Direction.Down)}
-    >
-        <Home
-            goUp={goUp}
-            goDown={goDown}
-        />
-    </Screen>
+    <Home
+        goUp={goUp}
+        goDown={goDown}
+    />
     <Screen
         onUp={joystick.goFromCb('launcher', Direction.Up)}
     >

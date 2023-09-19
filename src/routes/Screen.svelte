@@ -8,41 +8,60 @@
 </script>
 
 <div id="screen">
-    <div class='nav-arrow'>
-        {#if onUp}
-        <a on:click={onUp}>
-            <Icon icon='carbon:chevron-up' inline />
-        </a>
-        {/if}
-    </div>
+    {#if onUp}
+    <div class='nav nav-v nav-up' on:click={onUp} />
+    {/if}
+    {#if onDown}
+    <div class='nav nav-v nav-down' on:click={onDown} />
+    {/if}
+    {#if onLeft}
+    <div class='nav nav-h nav-left' on:click={onLeft} />
+    {/if}
+    {#if onRight}
+    <div class='nav nav-h nav-right' on:click={onRight} />
+    {/if}
     <div id="content">
         <slot />
-    </div>
-    <div class='nav-arrow'>
-        {#if onDown}
-        <a on:click={onDown}>
-            <Icon icon='carbon:chevron-down' inline/>
-        </a>
-        {/if}
     </div>
 </div>
 
 <style>
     #screen {
+        position: relative;
         width: 100vw;
         height: 100vh;
-        display: flex;
-        flex-direction: column;
     }
 
     #content {
-        flex: 1;
+        position: absolute;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
     }
 
-    .nav-arrow {
-        color: #bbb;
+    .nav-up    { background: linear-gradient(to top,    rgb(0, 0, 0, 0), white); }
+    .nav-down  { background: linear-gradient(to bottom, rgb(0, 0, 0, 0), white); bottom: 0; }
+    .nav-left  { background: linear-gradient(to left,   rgb(0, 0, 0, 0), white); }
+    .nav-right { background: linear-gradient(to right,  rgb(0, 0, 0, 0), white); right: 0; }
+
+    .nav {
+        position: absolute;
+        opacity: 0;
+        transition: opacity ease 0.2s;
+        z-index: 1;
+    }
+
+    .nav:hover {
+        opacity: 0.5;
+    }
+
+    .nav-v {
         width: 100%;
-        font-size: 1rem;
-        text-align: center;
+        height: 2rem;
+    }
+
+    .nav-h {
+        width: 2rem;
+        height: 100%;
     }
 </style>
