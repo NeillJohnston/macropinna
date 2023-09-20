@@ -14,6 +14,8 @@
             artist = metadata.track_artists?.join(', ');
             title = metadata.track_title;
             album = metadata.album_name;
+            // TODO can't load local files, which are provided by Firefox (and
+            // probably all local-hosted players)
             url = metadata.art_url;
         }, 1_000);
     });
@@ -24,19 +26,18 @@
     <img id="art" src={url} />
     {/if}
     <div id="info">
-        <div id="primary">
-            <p id="title">{title}</p>
-        </div>
-        <div id="secondary">
-            <p id="artist">{artist}</p>
-            <p id="album">{album}</p>
-        </div>
+        <p id="title">{title}</p>
+        <p id="artist">{artist}</p>
+        <p id="album">{album}</p>
     </div>
 </div>
 
 <style>
     p {
         margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     #player {
@@ -47,6 +48,10 @@
 
     #info {
         flex: 1;
+        /* Surprisingly counterintuitive even for CSS:
+        https://stackoverflow.com/questions/36230944/prevent-flex-items-from-overflowing-a-container
+        Anyway, it works. Tested on several Red Sparrowes songs :+1: */
+        min-width: 0;
         display: flex;
         flex-direction: column;
         justify-content: center;

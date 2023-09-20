@@ -12,7 +12,7 @@ const MEL_RESOLUTION: u32 = 1;
 
 pub struct AudioVisualizerManager {
     pub data: Arc<Mutex<Data>>,
-    send: mpsc::Sender<AudioVisualizerMessage>,
+    _send: mpsc::Sender<AudioVisualizerMessage>,
 }
 
 struct AudioVisualizerHandler {
@@ -29,7 +29,7 @@ enum AudioVisualizerMessage {
 }
 
 impl AudioVisualizerManager {
-    pub fn new(device: &str, is_input: bool) -> anyhow::Result<Self> {
+    pub fn new(device: &str) -> anyhow::Result<Self> {
         use std::thread::spawn;
 
         let data = Data::new(MEL_RANGE, MEL_RESOLUTION, 0.5);
@@ -47,11 +47,11 @@ impl AudioVisualizerManager {
 
         let msg = AudioVisualizerMessage::SetDevice {
             name: device.to_string(),
-            is_input: is_input
+            is_input: true
         };
         send.send(msg)?;
 
-        Ok(AudioVisualizerManager { send, data })
+        Ok(AudioVisualizerManager { _send: send, data })
     }
 }
 

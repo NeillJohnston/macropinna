@@ -20,8 +20,7 @@ fn _main() -> anyhow::Result<()> {
     
     let config = config_manager.config.read().unwrap();
     let audio_visualizer_manager = AudioVisualizerManager::new(
-        &config.audio_device.name,
-        config.audio_device.is_input
+        &config.audio_device.name
     )?;
 
     drop(config);

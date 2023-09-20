@@ -126,13 +126,12 @@ pub enum WeatherProvider {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AudioVisualizer {
-    pub name: String,
-    pub is_input: bool
+    pub name: String
 }
 
 impl Default for AudioVisualizer {
     fn default() -> Self {
-        AudioVisualizer { name: "default".to_string(), is_input: false }
+        AudioVisualizer { name: "default".to_string() }
     }
 }
 
