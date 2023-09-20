@@ -63,11 +63,11 @@ export const layout = writable({
         },
         {
             audioVisualizer: {
-                coords: { x: 2, y: 3, w: 8, h: 9 },
+                coords: { x: 2, y: 4, w: 8, h: 7 },
                 yAlign: 'top'
             },
             player: {
-                coords: { x: 2, y: 0, w: 8, h: 3 }
+                coords: { x: 2, y: 1, w: 8, h: 3 }
             }
         }
     ]

@@ -10,7 +10,7 @@
     // Update frequency, in Hz
     const freq = 30;
     // Number of bars in the display
-    const nBars = 60;
+    const nBars = 50;
 
     const data = new Array(nBars).fill(0);
     const displayData = new Array(nBars).fill(0);
@@ -18,14 +18,14 @@
     // Exponential time-series smoothing
     const smooth = 0.4;
     // Window smoothing
-    const wSmooth = 0.4;
-    const wSmoothRadius = 3;
+    const wSmooth = 0.3;
+    const wSmoothRadius = 2;
     
     // Function that maps raw volumes to bar heights (as proportions). Chosen
     // s.t. clipping is impossible but the height of each bar still looks
     // roughly proportional to its real volume. `amp` can be adjusted to make
     // bars reach the ceiling faster or slower
-    const amp = 8.0;
+    const amp = 4.0;
     const bar = (x: number) => (1 - 2/(1 + Math.exp(amp*x)));
 
     // Function that maps proportions of graph to proportion of audio spectrum.
@@ -88,6 +88,7 @@
         flex: 1;
         background: white;
         margin: 4px;
+        transition: height linear 0.033s;
     }
 
     /* Y alignment classes */
