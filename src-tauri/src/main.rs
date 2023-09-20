@@ -5,11 +5,7 @@ mod audio_visualizer;
 mod commands;
 mod config;
 
-fn main() -> Result<(), ()> {
-    _main().map_err(|_err| ())
-}
-
-fn _main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     use config::ConfigManager;
     use audio_visualizer::AudioVisualizerManager;
 
@@ -18,12 +14,10 @@ fn _main() -> anyhow::Result<()> {
     // TODO test value here obvi
     let config_manager = ConfigManager::new("../config.json");
     
-    let config = config_manager.config.read().unwrap();
-    let audio_visualizer_manager = AudioVisualizerManager::new(
-        &config.audio_device.name
-    )?;
-
-    drop(config);
+    let audio_visualizer_manager = {
+        let config = config_manager.config.read().unwrap();
+        AudioVisualizerManager::new(&config.audio_device.name)?
+    };
 
     tauri::Builder::default()
         .manage(config_manager)
