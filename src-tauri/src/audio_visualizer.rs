@@ -8,7 +8,14 @@ use std::sync::{mpsc, Arc, Mutex};
 const HEARING_RANGE: (f32, f32) = (20.0, 20_000.0);
 // Just outside the hearing range (20Hz = 31.7mel, 20kHz = 3816.9mel)
 const MEL_RANGE: (u32, u32) = (30, 3820);
+// Just provide all samples, will tweak if performance is a problem.
 const MEL_RESOLUTION: u32 = 1;
+// Note on how much compute is being used here - ~3000*4B are being written to
+// constantly, and fetched (from the frontend) at 30Hz. My guess is that the
+// bottleneck is ser/de, which happens over JSON. From experience (when I
+// accidentally spawned 10-20 callbacks on the frontend), we're a bit close to
+// the limit that starts to lag my computer, which is an issue because this
+// project is targetting machines with much worse hardware.
 
 pub struct AudioVisualizerManager {
     pub data: Arc<Mutex<Data>>,
