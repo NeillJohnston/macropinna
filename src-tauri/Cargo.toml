@@ -22,7 +22,7 @@ reqwest = { version = "0.11.20", features = ["json"] }
 log = "0.4.20"
 env_logger = "0.10.0"
 anyhow = "1.0.75"
-tokio = "1.32.0"
+tokio = { version = "1.32.0", features = ["full"] }
 futures = "0.3.28"
 cpal = "0.15.2"
 spectrum-analyzer = "1.4.0"

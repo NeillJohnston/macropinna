@@ -5,7 +5,8 @@ mod audio_visualizer;
 mod commands;
 mod config;
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     use config::ConfigManager;
     use audio_visualizer::AudioVisualizerManager;
 
@@ -14,7 +15,7 @@ fn main() -> anyhow::Result<()> {
     // TODO test value here obvi
     let config_manager = ConfigManager::new("../config.json");
 
-    let audio_visualizer_manager = AudioVisualizerManager::new(&config_manager);
+    let audio_visualizer_manager = AudioVisualizerManager::new(&config_manager).unwrap();
 
     tauri::Builder::default()
         .manage(config_manager)

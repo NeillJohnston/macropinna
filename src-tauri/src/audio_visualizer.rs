@@ -39,14 +39,14 @@ enum AudioVisualizerMessage {
 
 impl AudioVisualizerManager {
     pub fn new(config: &ConfigManager) -> anyhow::Result<Self> {
-        use std::thread::spawn;
-
         let data = Data::new(MEL_RANGE, MEL_RESOLUTION, 0.5);
         let data = Arc::new(Mutex::new(data));
+
         let (send, recv) = mpsc::channel();
         let _data = data.clone();
 
-        spawn(move || {
+        let rt = tokio::runtime::Handle::try_current().unwrap();
+        rt.spawn(async {
             AudioVisualizerHandler {
                 recv,
                 stream: None,
