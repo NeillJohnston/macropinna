@@ -4,6 +4,8 @@ use cpal::{Stream, SupportedStreamConfig, Device, SizedSample};
 use spectrum_analyzer::FrequencySpectrum;
 use std::sync::{mpsc, Arc, Mutex};
 
+use crate::config::ConfigManager;
+
 // Human-audible range (https://en.wikipedia.org/wiki/Hearing_range)
 const HEARING_RANGE: (f32, f32) = (20.0, 20_000.0);
 // Just outside the hearing range (20Hz = 31.7mel, 20kHz = 3816.9mel)
@@ -36,7 +38,7 @@ enum AudioVisualizerMessage {
 }
 
 impl AudioVisualizerManager {
-    pub fn new(device: &str) -> anyhow::Result<Self> {
+    pub fn new(config: &ConfigManager) -> anyhow::Result<Self> {
         use std::thread::spawn;
 
         let data = Data::new(MEL_RANGE, MEL_RESOLUTION, 0.5);
@@ -52,11 +54,13 @@ impl AudioVisualizerManager {
             }.run();
         });
 
-        let msg = AudioVisualizerMessage::SetDevice {
-            name: device.to_string(),
+        let config = config.config.read().unwrap();
+        let name = config.audio_device.name.clone();
+
+        send.send(AudioVisualizerMessage::SetDevice {
+            name,
             is_input: true
-        };
-        send.send(msg)?;
+        })?;
 
         Ok(AudioVisualizerManager { _send: send, data })
     }
@@ -138,24 +142,7 @@ impl AudioVisualizerHandler {
     fn load_device(&mut self, name: &str, is_input: bool) -> anyhow::Result<()> {
         use cpal::{traits::*, SampleFormat};
 
-        // TODO should host be configurable as well?
         let host = cpal::default_host();
-
-        // let input_devices = host
-        //     .devices()?
-        //     .filter(|dev| dev.default_input_config().is_ok())
-        //     .collect::<Vec<_>>();
-        // let output_devices = host
-        //     .devices()?
-        //     .filter(|dev| dev.default_output_config().is_ok())
-        //     .collect::<Vec<_>>();
-
-        // for dev in input_devices.iter() {
-        //     log::debug!("Available input device: {:?}", dev.name());
-        // }
-        // for dev in output_devices.iter() {
-        //     log::debug!("Available output device: {:?}", dev.name());
-        // }
 
         let device = host
             .devices()?
