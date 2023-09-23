@@ -9,7 +9,7 @@
     onMount(async () => {
         const { jwt } = await register(
             { device_name: 'ipad!' },
-            _code => {
+            (_code) => {
                 code = _code;
             }
         );
