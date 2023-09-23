@@ -10,13 +10,17 @@ use crate::{
 
 use std::{
     collections::BTreeMap,
-    sync::{Arc, Mutex, atomic::AtomicBool},
-    convert::Infallible, time::{Instant, Duration}
+    sync::{Arc, Mutex},
+    convert::Infallible,
+    time::{Instant, Duration}
 };
 use tauri::State;
 use tokio::{sync::oneshot, time::timeout};
 use uuid::Uuid;
-use warp::{ws::Ws, reply::Reply, Filter};
+use warp::{
+    ws::Ws,
+    reply::Reply, Filter
+};
 
 const PENDING_TIMEOUT_S: u64 = 60;
 
@@ -30,7 +34,6 @@ struct Server {
     // TODO using mutex as a default but could switch some to RwLocks
     init_map: Mutex<BTreeMap<Uuid, RegisterInit>>,
     pending_map: Mutex<BTreeMap<Uuid, RegisterPending>>,
-    connections: Mutex<BTreeMap<Uuid, ()>>,
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -55,15 +58,23 @@ struct RegisterPending {
     send: oneshot::Sender<RegisterApproval>
 }
 
+/// Request to register a device.
 #[derive(serde::Deserialize)]
 struct RegisterRequest {
     device_name: String,
 }
 
+/// Response with a UUID and display code.
 #[derive(serde::Serialize)]
 struct RegisterResponse {
     uuid: Uuid,
     code: String
+}
+
+/// Granted access via JWT.
+#[derive(serde::Serialize)]
+struct AccessResponse {
+    jwt: Option<String>
 }
 
 impl RemoteServerManager {
@@ -74,7 +85,6 @@ impl RemoteServerManager {
             port: config.remote_server.port,
             init_map: Mutex::new(BTreeMap::new()),
             pending_map: Mutex::new(BTreeMap::new()),
-            connections: Mutex::new(BTreeMap::new()),
         });
 
         spawn_server(server.clone());
@@ -173,7 +183,7 @@ async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
                 return warp::reply::with_status(
                     "uuid not found",
                     warp::http::StatusCode::UNAUTHORIZED
-                );
+                ).into_response();
             }
         }
     };
@@ -195,22 +205,20 @@ async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
     // Wait for approval/rejection/timeout
     let res = match timeout(Duration::from_secs(PENDING_TIMEOUT_S), recv).await {
         Ok(Ok(RegisterApproval::Approve)) => {
-            warp::reply::with_status(
-                "nice",
-                warp::http::StatusCode::OK
-            )
+            warp::reply::json(&AccessResponse {
+                jwt: Some("todo".to_string())
+            }).into_response()
         }
         Ok(Ok(RegisterApproval::Reject)) => {
-            warp::reply::with_status(
-                "rejected",
-                warp::http::StatusCode::UNAUTHORIZED
-            )
+            warp::reply::json(&AccessResponse {
+                jwt: None
+            }).into_response()
         }
         _ => {
             warp::reply::with_status(
                 "internal error",
                 warp::http::StatusCode::INTERNAL_SERVER_ERROR
-            )
+            ).into_response()
         }
     };
 
@@ -227,7 +235,7 @@ async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
     res
 }
 
-fn handle_ws(ws: Ws, authorization: String, server: Arc<Server>) -> impl Reply {
+fn handle_ws(_ws: Ws, _authorization: String, _server: Arc<Server>) -> impl Reply {
     "todo"
 }
 

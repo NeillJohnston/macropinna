@@ -11,17 +11,8 @@ fn ensure_command(output: Output, task: &str) {
 fn main() {
     use std::process::Command;
 
-    println!("cargo:rerun-if-changed=../src-rc/");
-
-    let output = Command::new("npm")
-        .current_dir("../src-rc")
-        .args(["run", "build"])
-        .output()
-        .unwrap();
-    ensure_command(output, "build rc");
-
-    // TODO i could probably just change the build location and make this all
-    // a single command
+    // TODO could probably just change the build location and remove this part
+    println!("cargo:rerun-if-changed=../src-rc/build");
     let output = Command::new("rm")
         .args(["-r", "./remote-static"])
         .output()

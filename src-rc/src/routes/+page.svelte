@@ -1,11 +1,32 @@
-<div id="controls">
+<script lang="ts">
+	import { onMount } from "svelte";
+    import { register } from "$lib/api";
+
+    console.log('hello');
+
+    let code = '';
+
+    onMount(async () => {
+        const { jwt } = await register(
+            { device_name: 'ipad!' },
+            _code => {
+                code = _code;
+            }
+        );
+
+        console.log(jwt);
+    })
+</script>
+
+<p>{code}</p>
+<!-- <div id="controls">
     <div id="up" class="button" />
     <div id="down" class="button" />
     <div id="left" class="button" />
     <div id="right" class="button" />
     <div id="cen" class="button" />
 </div>
-<p>Controller!</p>
+<p>Controller!</p> -->
 
 <style>
     #controls {
