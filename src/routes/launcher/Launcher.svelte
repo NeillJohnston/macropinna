@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import App from "./App.svelte";
-	import { joystick } from "$lib/joystick";
+	import { Direction, joystick } from "$lib/joystick";
+	import Screen from "../Screen.svelte";
 
     export let goUp: () => void;
 
@@ -42,6 +43,9 @@
     });
 </script>
 
+<Screen
+    onUp={joystick.goFromCb('launcher', Direction.Up)}
+>
 <div id="page">
     <div id="dim-left" />
     <div id="dim-right" />
@@ -58,6 +62,7 @@
         </div>
     </div>
 </div>
+</Screen>
 
 <style>
     #page {
