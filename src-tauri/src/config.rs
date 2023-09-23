@@ -109,6 +109,7 @@ pub struct ConfigV1 {
     pub name: String,
     pub weather: Option<Weather>,
     pub audio_device: AudioVisualizer,
+    pub remote_server: RemoteServer
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -132,6 +133,19 @@ pub struct AudioVisualizer {
 impl Default for AudioVisualizer {
     fn default() -> Self {
         AudioVisualizer { name: "default".to_string() }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RemoteServer {
+    pub port: u16
+}
+
+impl Default for RemoteServer {
+    fn default() -> Self {
+        RemoteServer {
+            port: 5174
+        }
     }
 }
 

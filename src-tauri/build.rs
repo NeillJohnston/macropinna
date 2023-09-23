@@ -1,27 +1,38 @@
-fn main() {
-    use std::{
-        io::{Write, stdout, stderr},
-        process::Command
-    };
+use std::process::Output;
 
-    let build_rc = Command::new("npm")
+fn ensure_command(output: Output, task: &str) {
+    use std::io::{Write, stdout, stderr};
+
+    stdout().write_all(&output.stdout).unwrap();
+    stderr().write_all(&output.stderr).unwrap();
+    assert!(output.status.success(), "Failed: {}", task);
+}
+
+fn main() {
+    use std::process::Command;
+
+    println!("cargo:rerun-if-changed=../src-rc/");
+
+    let output = Command::new("npm")
         .current_dir("../src-rc")
         .args(["run", "build"])
         .output()
         .unwrap();
+    ensure_command(output, "build rc");
 
-    stdout().write_all(&build_rc.stdout).unwrap();
-    stderr().write_all(&build_rc.stderr).unwrap();
-    assert!(build_rc.status.success(), "Failed to build rc");
-
-    let copy_rc = Command::new("cp")
-        .args(["-r", "../src-rc/build", "./rc-build"])
+    // TODO i could probably just change the build location and make this all
+    // a single command
+    let output = Command::new("rm")
+        .args(["-r", "./remote-static"])
         .output()
         .unwrap();
+    ensure_command(output, "remove old remote-static files");
 
-        stdout().write_all(&copy_rc.stdout).unwrap();
-        stderr().write_all(&copy_rc.stderr).unwrap();
-        assert!(build_rc.status.success(), "Failed to copy rc build");
+    let output = Command::new("cp")
+        .args(["-r", "../src-rc/build", "./remote-static"])
+        .output()
+        .unwrap();
+    ensure_command(output, "copy new remote-static files");
 
     tauri_build::build()
 }

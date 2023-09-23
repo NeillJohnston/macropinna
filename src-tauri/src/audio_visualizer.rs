@@ -45,8 +45,7 @@ impl AudioVisualizerManager {
         let (send, recv) = mpsc::channel();
         let _data = data.clone();
 
-        let rt = tokio::runtime::Handle::try_current().unwrap();
-        rt.spawn(async {
+        tokio::task::spawn(async {
             AudioVisualizerHandler {
                 recv,
                 stream: None,
