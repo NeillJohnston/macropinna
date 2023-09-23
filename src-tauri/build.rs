@@ -1,29 +1,9 @@
-use std::process::Output;
-
-fn ensure_command(output: Output, task: &str) {
-    use std::io::{Write, stdout, stderr};
-
-    stdout().write_all(&output.stdout).unwrap();
-    stderr().write_all(&output.stderr).unwrap();
-    assert!(output.status.success(), "Failed: {}", task);
-}
-
 fn main() {
-    use std::process::Command;
-
-    // TODO could probably just change the build location and remove this part
-    println!("cargo:rerun-if-changed=../src-rc/build");
-    let output = Command::new("rm")
-        .args(["-r", "./remote-static"])
-        .output()
-        .unwrap();
-    ensure_command(output, "remove old remote-static files");
-
-    let output = Command::new("cp")
-        .args(["-r", "../src-rc/build", "./remote-static"])
-        .output()
-        .unwrap();
-    ensure_command(output, "copy new remote-static files");
+    // TODO this doesn't do anything because if remote-static is gitignore'd,
+    // then it doesn't get tracked for changes even if explicitly mentioned.
+    // Right now the process is to `npm run build:watch` from the remote project
+    // and manually trigger a recompile from the Tauri project
+    // println!("cargo:rerun-if-changed=remote-static");
 
     tauri_build::build()
 }
