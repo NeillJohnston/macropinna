@@ -51,9 +51,11 @@
                 action: goDown
             },
             left: {
+                keep: true,
                 action: () => { index = (index - 1 + $_layout.home.length) % $_layout.home.length; }
             },
             right: {
+                keep: true,
                 action: () => { index = (index + 1) % $_layout.home.length; }
             },
         });

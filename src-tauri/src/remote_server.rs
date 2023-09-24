@@ -22,7 +22,7 @@ use warp::{
     reply::Reply, Filter
 };
 
-const PENDING_TIMEOUT_S: u64 = 60;
+const PENDING_TIMEOUT_S: u64 = 10;
 
 pub struct RemoteServerManager {
     server: Arc<Server>,
@@ -32,30 +32,31 @@ struct Server {
     app_handle: GlobalAppHandle,
     port: u16,
     // TODO using mutex as a default but could switch some to RwLocks
-    init_map: Mutex<BTreeMap<Uuid, RegisterInit>>,
-    pending_map: Mutex<BTreeMap<Uuid, RegisterPending>>,
+    init_map: Mutex<BTreeMap<Uuid, AccessInit>>,
+    pending_map: Mutex<BTreeMap<Uuid, AccessPending>>,
 }
 
 #[derive(Clone, serde::Serialize)]
-pub struct RegisterDevice {
+pub struct DeviceInfo {
+    uuid: Uuid,
     name: String,
     code: String
 }
 
 #[derive(Clone)]
-struct RegisterInit {
+struct AccessInit {
     timestamp: Instant,
-    device: RegisterDevice
+    device: DeviceInfo
 }
 
-enum RegisterApproval {
+enum AccessApproval {
     Approve,
     Reject
 }
 
-struct RegisterPending {
-    init: RegisterInit,
-    send: oneshot::Sender<RegisterApproval>
+struct AccessPending {
+    init: AccessInit,
+    send: oneshot::Sender<AccessApproval>
 }
 
 /// Request to register a device.
@@ -156,14 +157,22 @@ fn with_server(server: Arc<Server>) -> impl Filter<Extract = (Arc<Server>,), Err
 
 fn handle_register(req: RegisterRequest, server: Arc<Server>) -> impl Reply {
     let uuid = Uuid::new_v4();
-    let code = format!("{:08}", Uuid::new_v4().as_u128() % 1_0000_0000);
+    // Code is generated as the low 8 digits of a uuid, presumably random enough
+    // (Also split into 2 groups of digits for readability)
+    let mut code_uuid = Uuid::new_v4().as_u128();
+    let lower = code_uuid % 10000;
+    code_uuid /= 10000;
+    let upper = code_uuid % 10000;
+    let code = format!("{:04}-{:04}", upper, lower);
 
     { // Lock for server.pending
         let mut init_map = server.init_map.lock().unwrap();
         // TODO is there any sense in checking for collisions here
-        init_map.insert(uuid, RegisterInit {
+        init_map.insert(uuid.clone(), AccessInit {
             timestamp: Instant::now(),
-            device: RegisterDevice {
+            device: DeviceInfo {
+                // (Note: redundant UUID storage)
+                uuid,
                 name: req.device_name,
                 code: code.clone(),
             },
@@ -191,7 +200,7 @@ async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
     let (send, recv) = oneshot::channel();
     { // Lock for server.pending_map
         let mut pending_map = server.pending_map.lock().unwrap();
-        pending_map.insert(uuid, RegisterPending {
+        pending_map.insert(uuid, AccessPending {
             init,
             send
         });
@@ -203,13 +212,14 @@ async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
     );
 
     // Wait for approval/rejection/timeout
+    log::info!("Awaiting timeout for {}", uuid);
     let res = match timeout(Duration::from_secs(PENDING_TIMEOUT_S), recv).await {
-        Ok(Ok(RegisterApproval::Approve)) => {
+        Ok(Ok(AccessApproval::Approve)) => {
             warp::reply::json(&AccessResponse {
                 jwt: Some("todo".to_string())
             }).into_response()
         }
-        Ok(Ok(RegisterApproval::Reject)) => {
+        Ok(Ok(AccessApproval::Reject)) => {
             warp::reply::json(&AccessResponse {
                 jwt: None
             }).into_response()
@@ -225,6 +235,7 @@ async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
     { // Lock for server.pending_map
         let mut pending_map = server.pending_map.lock().unwrap();
         pending_map.remove(&uuid);
+        log::info!("Removing uuid {}", uuid);
     }
 
     server.app_handle.emit_all(
@@ -240,7 +251,7 @@ fn handle_ws(_ws: Ws, _authorization: String, _server: Arc<Server>) -> impl Repl
 }
 
 #[tauri::command]
-pub fn get_pending_list(remote_server: State<'_, RemoteServerManager>) -> Vec<RegisterDevice> {
+pub fn get_pending_list(remote_server: State<'_, RemoteServerManager>) -> Vec<DeviceInfo> {
     let mut list = { // Lock for server.pending_map
         let pending = remote_server.server.pending_map.lock().unwrap();
         pending.values().map(|val| val.init.clone()).collect::<Vec<_>>()
@@ -255,6 +266,7 @@ pub fn get_pending_list(remote_server: State<'_, RemoteServerManager>) -> Vec<Re
 pub fn update_pending(remote_server: State<'_, RemoteServerManager>, uuid: Uuid, approve: bool) {
     let pending = { // Lock for server.pending_map
         let mut pending_map = remote_server.server.pending_map.lock().unwrap();
+        log::info!("update_pending: Removing uuid {}", uuid);
         pending_map.remove(&uuid)
     };
 
@@ -265,7 +277,7 @@ pub fn update_pending(remote_server: State<'_, RemoteServerManager>, uuid: Uuid,
 
     let pending = pending.unwrap();
     let _res = pending.send.send(match approve {
-        true => RegisterApproval::Approve,
-        false => RegisterApproval::Reject
+        true => AccessApproval::Approve,
+        false => AccessApproval::Reject
     });
 }

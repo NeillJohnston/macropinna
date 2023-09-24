@@ -3,7 +3,14 @@ import { writable } from 'svelte/store';
 export const nav = writable('/');
 
 interface Target {
-    id?: string;
+    // Alias this direction as another
+    alias?: Direction;
+    // Whether to keep the current stack top (combined with an id turns the
+    // overall action into a stack push)
+    keep?: boolean;
+    // Target component id - can be just a string or a callback
+    id?: string | (() => string);
+    // Action to take after successfully navigating
     action?: () => void;
 }
 
@@ -13,7 +20,7 @@ interface Component {
     left?: Target;
     right?: Target;
     enter?: Target;
-    onExit?: () => void;
+    exit?: Target;
 }
 
 export enum Direction {
@@ -23,6 +30,17 @@ export enum Direction {
     Right,
     Enter,
     Exit
+}
+
+const targetKey = (dir: Direction): 'up' | 'down' | 'left' | 'right' | 'enter' | 'exit' => {
+    return {
+        [Direction.Up]: 'up',
+        [Direction.Down]: 'down',
+        [Direction.Left]: 'left',
+        [Direction.Right]: 'right',
+        [Direction.Enter]: 'enter',
+        [Direction.Exit]: 'exit',
+    }[dir] as 'up' | 'down' | 'left' | 'right' | 'enter' | 'exit';
 }
 
 class Joystick {
@@ -63,41 +81,47 @@ class Joystick {
         return () => this.goFrom(id, dir);
     }
 
+    // Push onto the navigation stack, as if a component was just entered.
+    push(id: string) {
+        this.stack.push(id);
+    }
+
     private _go(dir: Direction): boolean {
         const curr = this.stack.pop();
         if (!curr) throw new Error('Navigation stack is empty');
 
-        if (dir === Direction.Exit) {
-            if (this.stack.length === 0) {
-                this.stack.push(curr);
-                return false;
-            }
-            else {
-                return true;
-            }
-        }
-
         const component = this.components.get(curr);
         if (!component) throw new Error(`Navigation component "${curr}" not found`);
 
-        const dirKey = {
-            [Direction.Up]: 'up',
-            [Direction.Down]: 'down',
-            [Direction.Left]: 'left',
-            [Direction.Right]: 'right',
-            [Direction.Enter]: 'enter',
-        }[dir] as 'up' | 'down' | 'left' | 'right' | 'enter';
-
-        const target = component[dirKey];
+        let target = component[targetKey(dir)];
         if (!target) {
             this.stack.push(curr);
             return false;
         }
-        if (dir === Direction.Enter) {
+
+        if (target.alias) {
+            target = component[targetKey(target.alias)];
+        }
+        if (!target) {
+            throw new Error(`Navigation target "${curr}}" (aliased) not found`);
+        }
+        if (target.alias) {
+            throw new Error(`Multi-level aliasing detected for component "${curr}"`);
+        }
+
+        if (target.keep) {
             this.stack.push(curr);
         }
 
-        this.stack.push(target.id ?? curr);
+        if (target.id) {
+            if (typeof target.id === 'string') {
+                this.stack.push(target.id);
+            }
+            else {
+                this.stack.push(target.id());
+            }
+        }
+
         if (target.action) {
             target.action();
         }

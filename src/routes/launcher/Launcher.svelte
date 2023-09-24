@@ -34,9 +34,11 @@
                 action: goUp
             },
             left: {
+                keep: true,
                 action: () => { index = (apps.length + index - 1) % apps.length; }
             },
             right: {
+                keep: true,
                 action: () => { index = (apps.length + index + 1) % apps.length; }
             }
         });

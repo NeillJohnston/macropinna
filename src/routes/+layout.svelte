@@ -65,6 +65,10 @@
         src: url('/fonts/IBMPlexMono-Regular.ttf');
     }
 
+    .mono {
+        font-family: 'IBM Plex Mono';
+    }
+
     :root {
         color: #fff;
         font-family: 'IBM Plex Sans';
