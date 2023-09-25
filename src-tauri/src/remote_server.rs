@@ -31,7 +31,7 @@ pub struct RemoteServerManager {
 struct Server {
     app_handle: GlobalAppHandle,
     port: u16,
-    // TODO using mutex as a default but could switch some to RwLocks
+    key: Arc<String>,
     init_map: Mutex<BTreeMap<Uuid, AccessInit>>,
     pending_map: Mutex<BTreeMap<Uuid, AccessPending>>,
 }
@@ -78,12 +78,27 @@ struct AccessResponse {
     jwt: Option<String>
 }
 
+struct ActiveDevice {
+    uuid: Uuid,
+}
+
+impl ActiveDevice {
+    fn claims(&self) -> BTreeMap<&'static str, String> {
+        BTreeMap::from([
+            ("iss", "macropinna".to_string()),
+            ("sub", self.uuid.to_string())
+        ])
+    }
+}
+
 impl RemoteServerManager {
     pub fn new(config: &ConfigManager, app_handle: GlobalAppHandle) -> Self {
         let config = config.config.read().unwrap();
         let server = Arc::new(Server {
             app_handle,
             port: config.remote_server.port,
+            // TODO unhardcode
+            key: Arc::new("secret".to_string()),
             init_map: Mutex::new(BTreeMap::new()),
             pending_map: Mutex::new(BTreeMap::new()),
         });
@@ -98,7 +113,11 @@ impl RemoteServerManager {
 
 #[derive(Clone, serde::Serialize)]
 enum RemoteServerEvent {
-    RefreshPending
+    RefreshPending,
+    RefreshActive,
+    Connected {
+        device: DeviceInfo
+    }
 }
 
 impl RemoteServerEvent {
@@ -109,16 +128,6 @@ impl RemoteServerEvent {
 
 fn spawn_server(server: Arc<Server>) {
     tokio::task::spawn(async move {
-        /*
-        Message flow for authentication:
-        1. POST /api/register + {device_name}
-           server stores device_name and uuid, RESPOND {uuid, confirmation_code}
-        2. client displays confirmation_code, POST /api/register/[uuid]
-           server displays confirmation_code & confirms, RESPOND {jwt}
-        3. GET /api/ws + {jwt}
-           server authenticates jwt, upgrades connection
-         */
-
         let index = warp::fs::dir("./remote-static");
     
         let register = warp::path!("api" / "register")
@@ -159,10 +168,9 @@ fn handle_register(req: RegisterRequest, server: Arc<Server>) -> impl Reply {
     let uuid = Uuid::new_v4();
     // Code is generated as the low 8 digits of a uuid, presumably random enough
     // (Also split into 2 groups of digits for readability)
-    let mut code_uuid = Uuid::new_v4().as_u128();
+    let code_uuid = Uuid::new_v4().as_u128();
     let lower = code_uuid % 10000;
-    code_uuid /= 10000;
-    let upper = code_uuid % 10000;
+    let upper = (code_uuid / 10000) % 10000;
     let code = format!("{:04}-{:04}", upper, lower);
 
     { // Lock for server.pending
@@ -183,6 +191,10 @@ fn handle_register(req: RegisterRequest, server: Arc<Server>) -> impl Reply {
 }
 
 async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
+    use hmac::{Hmac, Mac};
+    use jwt::SignWithKey;
+    use sha2::Sha256;
+
     // Custom cleanup struct to make sure we remove the `AccessPending` object
     // from `pending_map` even if we get dropped early
     // TODO not sure if putting the struct/impl in here is cool or unhinged
@@ -233,13 +245,23 @@ async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
         RemoteServerEvent::RefreshPending
     );
 
-    let cleanup = Cleanup { uuid, server };
+    let key = server.key.clone();
+    let cleanup = Cleanup { uuid: uuid.clone(), server };
     
     // Wait for approval/rejection/timeout
     let res = match timeout(Duration::from_secs(PENDING_TIMEOUT_S), recv).await {
         Ok(Ok(AccessApproval::Approve)) => {
+            log::info!("Approving access for {}", uuid);
+
+            let device = ActiveDevice { uuid };
+            
+            let key: Hmac<Sha256> = Hmac::new_from_slice(key.as_bytes()).unwrap();
+            let claims = device.claims();
+
+            let jwt = claims.sign_with_key(&key).unwrap();
+
             warp::reply::json(&AccessResponse {
-                jwt: Some("todo".to_string())
+                jwt: Some(jwt)
             }).into_response()
         }
         Ok(Ok(AccessApproval::Reject)) => {
@@ -247,11 +269,22 @@ async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
                 jwt: None
             }).into_response()
         }
-        _ => {
+        Ok(Err(_)) => {
             warp::reply::with_status(
                 "internal error",
                 warp::http::StatusCode::INTERNAL_SERVER_ERROR
             ).into_response()
+        }
+        Err(_) => {
+            log::info!(
+                "Rejecting access for {} by default after {}s",
+                uuid,
+                PENDING_TIMEOUT_S
+            );
+
+            warp::reply::json(&AccessResponse {
+                jwt: None
+            }).into_response()
         }
     };
 
@@ -283,11 +316,11 @@ pub fn update_pending(remote_server: State<'_, RemoteServerManager>, uuid: Uuid,
     };
 
     if pending.is_none() {
-        log::error!("Could not update pending status");
+        log::error!("Tried to update pending status for nonexistent uuid {}", uuid);
         return;
     }
-
     let pending = pending.unwrap();
+    
     let _res = pending.send.send(match approve {
         true => AccessApproval::Approve,
         false => AccessApproval::Reject

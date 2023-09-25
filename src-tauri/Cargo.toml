@@ -30,6 +30,8 @@ mpris = "2.0.1"
 warp = "0.3.5"
 jwt = "0.16.0"
 uuid = { version = "1.4.1", features = ["v4", "serde"] }
+hmac = "0.12.1"
+sha2 = "0.10.7"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.
