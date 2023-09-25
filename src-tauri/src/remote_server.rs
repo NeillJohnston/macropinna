@@ -19,7 +19,7 @@ use tokio::{sync::oneshot, time::timeout};
 use uuid::Uuid;
 use warp::{
     ws::Ws,
-    reply::Reply, Filter
+    reply::Reply, Filter, filters::ws::WebSocket
 };
 
 const PENDING_TIMEOUT_S: u64 = 60;
@@ -31,9 +31,10 @@ pub struct RemoteServerManager {
 struct Server {
     app_handle: GlobalAppHandle,
     port: u16,
-    key: Arc<String>,
+    signer: Arc<String>,
     init_map: Mutex<BTreeMap<Uuid, AccessInit>>,
     pending_map: Mutex<BTreeMap<Uuid, AccessPending>>,
+    active_map: Mutex<BTreeMap<Uuid, DeviceInfo>>,
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -50,7 +51,7 @@ struct AccessInit {
 }
 
 enum AccessApproval {
-    Approve,
+    Approve(DeviceInfo),
     Reject
 }
 
@@ -78,16 +79,19 @@ struct AccessResponse {
     jwt: Option<String>
 }
 
-struct ActiveDevice {
-    uuid: Uuid,
+/// JWT claims object.
+#[derive(serde::Serialize, serde::Deserialize)]
+struct ActiveDeviceClaims {
+    iss: String,
+    sub: Uuid
 }
 
-impl ActiveDevice {
-    fn claims(&self) -> BTreeMap<&'static str, String> {
-        BTreeMap::from([
-            ("iss", "macropinna".to_string()),
-            ("sub", self.uuid.to_string())
-        ])
+impl ActiveDeviceClaims {
+    fn new(uuid: Uuid) -> Self {
+        ActiveDeviceClaims {
+            iss: "macropinna".to_string(),
+            sub: uuid
+        }
     }
 }
 
@@ -98,9 +102,10 @@ impl RemoteServerManager {
             app_handle,
             port: config.remote_server.port,
             // TODO unhardcode
-            key: Arc::new("secret".to_string()),
+            signer: Arc::new("secret".to_string()),
             init_map: Mutex::new(BTreeMap::new()),
             pending_map: Mutex::new(BTreeMap::new()),
+            active_map: Mutex::new(BTreeMap::new()),
         });
 
         spawn_server(server.clone());
@@ -245,19 +250,26 @@ async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
         RemoteServerEvent::RefreshPending
     );
 
-    let key = server.key.clone();
-    let cleanup = Cleanup { uuid: uuid.clone(), server };
+    let signer = server.signer.clone();
+    let cleanup = Cleanup { uuid, server };
     
     // Wait for approval/rejection/timeout
     let res = match timeout(Duration::from_secs(PENDING_TIMEOUT_S), recv).await {
-        Ok(Ok(AccessApproval::Approve)) => {
-            log::info!("Approving access for {}", uuid);
+        Ok(Ok(AccessApproval::Approve(device))) => {
+            log::info!("Approving access for {}", cleanup.uuid);
 
-            let device = ActiveDevice { uuid };
-            
-            let key: Hmac<Sha256> = Hmac::new_from_slice(key.as_bytes()).unwrap();
-            let claims = device.claims();
+            { // Lock for server.active_map
+                let mut active_map = cleanup.server.active_map.lock().unwrap();
+                active_map.insert(cleanup.uuid.clone(), device.clone());
+            }
 
+            cleanup.server.app_handle.emit_all(
+                RemoteServerEvent::channel(),
+                RemoteServerEvent::Connected { device }
+            );
+
+            let key: Hmac<Sha256> = Hmac::new_from_slice(signer.as_bytes()).unwrap();
+            let claims = ActiveDeviceClaims::new(cleanup.uuid.clone());
             let jwt = claims.sign_with_key(&key).unwrap();
 
             warp::reply::json(&AccessResponse {
@@ -292,20 +304,66 @@ async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
     res
 }
 
-fn handle_ws(_ws: Ws, _authorization: String, _server: Arc<Server>) -> impl Reply {
-    "todo"
+fn handle_ws(ws: Ws, authorization: String, server: Arc<Server>) -> impl Reply {
+    use hmac::{Hmac, Mac};
+    use jwt::VerifyWithKey;
+    use sha2::Sha256;
+
+    let signer = &server.signer;
+    let key: Hmac<Sha256> = Hmac::new_from_slice(signer.as_bytes()).unwrap();
+
+    let claims: ActiveDeviceClaims = match authorization.verify_with_key(&key) {
+        Ok(claims) => claims,
+        Err(err) => {
+            log::error!("Error while handling ws: {}", err);
+            return warp::reply::with_status(
+                "unauthorized",
+                warp::http::StatusCode::UNAUTHORIZED
+            ).into_response();
+        }
+    };
+
+    { // Lock for server.active_map
+        let active_map = server.active_map.lock().unwrap();
+        if !active_map.contains_key(&claims.sub) {
+            log::error!("No active device found: {}", claims.sub);
+            return warp::reply::with_status(
+                "unauthorized",
+                warp::http::StatusCode::UNAUTHORIZED
+            ).into_response();
+        }
+    }
+
+    ws.on_upgrade(move |socket| {
+        handle_ws_connection(socket)
+    }).into_response()
+}
+
+/// Handler for an active, authenticated WebSocket connection.
+async fn handle_ws_connection(socket: WebSocket) {
+
 }
 
 #[tauri::command]
 pub fn get_pending_list(remote_server: State<'_, RemoteServerManager>) -> Vec<DeviceInfo> {
     let mut list = { // Lock for server.pending_map
-        let pending = remote_server.server.pending_map.lock().unwrap();
-        pending.values().map(|val| val.init.clone()).collect::<Vec<_>>()
+        let pending_map = remote_server.server.pending_map.lock().unwrap();
+        pending_map.values().map(|val| val.init.clone()).collect::<Vec<_>>()
     };
 
     list.sort_by_key(|init| init.timestamp);
 
     list.into_iter().map(|init| init.device).collect()
+}
+
+#[tauri::command]
+pub fn get_active_list(remote_server: State<'_, RemoteServerManager>) -> Vec<DeviceInfo> {
+    let list = { // Lock for server.active_map
+        let active_map = remote_server.server.active_map.lock().unwrap();
+        active_map.values().map(|val| val.clone()).collect::<Vec<_>>()
+    };
+
+    list
 }
 
 #[tauri::command]
@@ -322,7 +380,7 @@ pub fn update_pending(remote_server: State<'_, RemoteServerManager>, uuid: Uuid,
     let pending = pending.unwrap();
     
     let _res = pending.send.send(match approve {
-        true => AccessApproval::Approve,
+        true => AccessApproval::Approve(pending.init.device),
         false => AccessApproval::Reject
     });
 }
