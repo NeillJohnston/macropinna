@@ -22,7 +22,7 @@ use warp::{
     reply::Reply, Filter
 };
 
-const PENDING_TIMEOUT_S: u64 = 10;
+const PENDING_TIMEOUT_S: u64 = 60;
 
 pub struct RemoteServerManager {
     server: Arc<Server>,
@@ -183,6 +183,28 @@ fn handle_register(req: RegisterRequest, server: Arc<Server>) -> impl Reply {
 }
 
 async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
+    // Custom cleanup struct to make sure we remove the `AccessPending` object
+    // from `pending_map` even if we get dropped early
+    // TODO not sure if putting the struct/impl in here is cool or unhinged
+    struct Cleanup {
+        uuid: Uuid,
+        server: Arc<Server>
+    }
+    
+    impl Drop for Cleanup {
+        fn drop(&mut self) {
+            { // Lock for server.pending_map
+                let mut pending_map = self.server.pending_map.lock().unwrap();
+                pending_map.remove(&self.uuid);
+            }
+        
+            self.server.app_handle.emit_all(
+                RemoteServerEvent::channel(),
+                RemoteServerEvent::RefreshPending
+            );
+        }
+    }
+    
     let init = { // Lock for server.init_map
         let mut init_map = server.init_map.lock().unwrap();
 
@@ -211,8 +233,9 @@ async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
         RemoteServerEvent::RefreshPending
     );
 
+    let cleanup = Cleanup { uuid, server };
+    
     // Wait for approval/rejection/timeout
-    log::info!("Awaiting timeout for {}", uuid);
     let res = match timeout(Duration::from_secs(PENDING_TIMEOUT_S), recv).await {
         Ok(Ok(AccessApproval::Approve)) => {
             warp::reply::json(&AccessResponse {
@@ -232,17 +255,7 @@ async fn handle_register_uuid(uuid: Uuid, server: Arc<Server>) -> impl Reply {
         }
     };
 
-    { // Lock for server.pending_map
-        let mut pending_map = server.pending_map.lock().unwrap();
-        pending_map.remove(&uuid);
-        log::info!("Removing uuid {}", uuid);
-    }
-
-    server.app_handle.emit_all(
-        RemoteServerEvent::channel(),
-        RemoteServerEvent::RefreshPending
-    );
-
+    drop(cleanup);
     res
 }
 
@@ -266,7 +279,6 @@ pub fn get_pending_list(remote_server: State<'_, RemoteServerManager>) -> Vec<De
 pub fn update_pending(remote_server: State<'_, RemoteServerManager>, uuid: Uuid, approve: bool) {
     let pending = { // Lock for server.pending_map
         let mut pending_map = remote_server.server.pending_map.lock().unwrap();
-        log::info!("update_pending: Removing uuid {}", uuid);
         pending_map.remove(&uuid)
     };
 
