@@ -42,7 +42,6 @@
 </script>
 
 <div id='app-root'>
-    <!-- <div class='dim-edge' /> -->
     <slot />
 </div>
 

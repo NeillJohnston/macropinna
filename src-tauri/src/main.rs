@@ -44,6 +44,7 @@ async fn main() -> anyhow::Result<()> {
         &config_manager,
         global_app_handle.clone()
     );
+    
     tauri::Builder::default()
         .setup(move |app| {
             let mut handle = global_app_handle.0.lock().unwrap();

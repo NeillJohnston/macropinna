@@ -3,7 +3,7 @@
     import Launcher from './launcher/Launcher.svelte';
 	import Settings from './settings/Settings.svelte';
 
-    let screenIndex = 1
+    let screenIndex = 1;
 
     const goUp = () => {
         screenIndex -= 1;

@@ -13,12 +13,13 @@
     export let goDown: () => void;
 
     // Enable/disable visual grid
-    const grid = false;
+    const grid = true;
 
     const GRID_X = 12;
     const GRID_Y = 12;
 
     let index = 0;
+    // TODO does this need to be reactive
     $: screens = $_layout.home;
 
     const portionX = (n: number) => 100.0 * n / GRID_X;

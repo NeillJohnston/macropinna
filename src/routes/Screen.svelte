@@ -1,6 +1,4 @@
 <script lang="ts">
-    import Icon from '@iconify/svelte';
-
     export let onUp: undefined | (() => void) = undefined;
     export let onDown: undefined | (() => void) = undefined;
     export let onLeft: undefined | (() => void) = undefined;
