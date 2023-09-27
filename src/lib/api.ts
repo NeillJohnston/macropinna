@@ -9,5 +9,5 @@ export interface DeviceInfo {
 export type RemoteServerEvent = 'RefreshPending';
 
 export const getPendingDevices = async (): Promise<DeviceInfo[]> => {
-    return await invoke('get_pending_list') as DeviceInfo[];
+    return await invoke('get_pending_info_list') as DeviceInfo[];
 }

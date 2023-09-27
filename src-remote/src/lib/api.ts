@@ -13,6 +13,24 @@ export interface AccessResponse {
     jwt?: string;
 }
 
+export type RemoteControlEvent = {
+    DPad: 'Up' | 'Down' | 'Left' | 'Right' | 'Enter' | 'Exit';
+}
+
+// A class that sends events over WebSocket
+export class EventSocket {
+    constructor(
+        public ws: WebSocket,
+        public onClose: () => void
+    ) {
+        ws.addEventListener('close', onClose);
+    }
+
+    send(event: RemoteControlEvent) {
+        this.ws.send(JSON.stringify(event));
+    }
+}
+
 class RequestBuilder {
     constructor(
         private _url: string = '',
@@ -77,4 +95,22 @@ export const register = async (
         .method('POST')
         .response();
     return res2.json() as AccessResponse;
+}
+
+export const connect = async (jwt: string, onClose: () => void): Promise<EventSocket> => {
+    // Directly from https://stackoverflow.com/a/47472874, thank you user Eadz
+    let url = new URL(`/api/ws/${jwt}`, window.location.href);
+    url.protocol = url.protocol.replace('http', 'ws');
+    
+    const ws = new WebSocket(url.href);
+
+    ws.addEventListener('open', (event) => {
+        console.log(event);
+    });
+
+    return new Promise((resolve, reject) => {
+        ws.addEventListener('open', () => {
+            resolve(new EventSocket(ws, onClose));
+        });
+    });
 }

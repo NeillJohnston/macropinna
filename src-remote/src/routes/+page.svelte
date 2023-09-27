@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-    import { register } from "$lib/api";
+    import { connect, register } from "$lib/api";
 
     console.log('hello');
 
@@ -15,6 +15,13 @@
         );
 
         console.log(jwt);
+
+        if (jwt) {
+            console.log('Connecting...');
+            const socket = await connect(jwt, () => { console.log('Closed'); });
+
+            socket.send({ DPad: 'Down' });
+        }
     })
 </script>
 

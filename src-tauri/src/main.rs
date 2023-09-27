@@ -62,8 +62,8 @@ async fn main() -> anyhow::Result<()> {
             commands::get_weather,
             commands::get_audio_spectrum,
             commands::get_player_metadata,
-            remote_server::get_pending_list,
-            remote_server::get_active_list,
+            remote_server::get_pending_info_list,
+            remote_server::get_active_info_list,
             remote_server::update_pending,
         ])
         .run(tauri::generate_context!())?;

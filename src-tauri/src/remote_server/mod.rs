@@ -8,6 +8,7 @@ use crate::{
     config::ConfigManager,
 };
 
+use futures::stream::{SplitStream, SplitSink};
 use serde::{Serialize, Deserialize};
 use std::{
     collections::BTreeMap,
@@ -16,11 +17,11 @@ use std::{
     time::{Instant, Duration}
 };
 use tauri::State;
-use tokio::{sync::oneshot, time::timeout};
+use tokio::{sync::oneshot, sync::mpsc, time::timeout};
 use uuid::Uuid;
 use warp::{
-    ws::Ws,
-    reply::Reply, Filter, filters::ws::WebSocket
+    ws,
+    reply::Reply, Filter,
 };
 
 const PENDING_TIMEOUT_S: u64 = 60;
@@ -36,11 +37,15 @@ struct ServerState {
     // State
     init_map: Mutex<BTreeMap<Uuid, AccessInit>>,
     pending_map: Mutex<BTreeMap<Uuid, AccessPending>>,
-    active_map: Mutex<BTreeMap<Uuid, DeviceInfo>>,
+    // 
+    active_map: Mutex<BTreeMap<Uuid, Active>>,
+    // TODO store inactive devices (persistently) as well, this will probably
+    // require some sort of database to be added
 }
 
+/// The part of an access request that can be consumed by the frontend.
 #[derive(Clone, Serialize)]
-pub struct DeviceInfo {
+pub struct AccessInfo {
     uuid: Uuid,
     name: String,
     code: String
@@ -48,18 +53,31 @@ pub struct DeviceInfo {
 
 #[derive(Clone)]
 struct AccessInit {
-    device: DeviceInfo
+    info: AccessInfo
 }
 
 enum AccessApproval {
-    Approve(DeviceInfo),
+    Approve(AccessInfo),
     Reject
 }
 
 struct AccessPending {
-    device: DeviceInfo,
+    info: AccessInfo,
     timestamp: Instant,
     send: oneshot::Sender<AccessApproval>
+}
+
+/// The part of an active connection that can be consumed by the frontend.
+#[derive(Clone, Serialize)]
+pub struct ActiveInfo {
+    uuid: Uuid,
+    name: String,
+    // TODO other stuff from claims
+}
+
+struct Active {
+    info: ActiveInfo,
+    send: SplitSink<ws::WebSocket, ws::Message>
 }
 
 impl ServerState {
@@ -68,7 +86,7 @@ impl ServerState {
         let mut init_map = self.init_map.lock().unwrap();
         // TODO is there any sense in checking for collisions here
         init_map.insert(uuid.clone(), AccessInit {
-            device: DeviceInfo { uuid, name, code },
+            info: AccessInfo { uuid, name, code },
         });
     }
 
@@ -83,7 +101,7 @@ impl ServerState {
         { // Lock for pending_map
             let mut pending_map = self.pending_map.lock().unwrap();
             pending_map.insert(uuid, AccessPending {
-                device: init.device,
+                info: init.info,
                 timestamp: Instant::now(),
                 send
             });
@@ -111,16 +129,46 @@ impl ServerState {
     }
 
     /// Add an active connection
-    fn add_active(&self, uuid: Uuid, device: DeviceInfo) {
+    fn add_active(&self, claims: ActiveDeviceClaims, send: SplitSink<ws::WebSocket, ws::Message>) {
+        let info = ActiveInfo {
+            uuid: claims.sub,
+            name: claims.name
+        };
+
         { // Lock for server.active_map
             let mut active_map = self.active_map.lock().unwrap();
-            active_map.insert(uuid, device.clone());
+            active_map.insert(claims.sub.clone(), Active {
+                info: info.clone(),
+                send
+            });
         }
 
         self.app_handle.emit_all(
             RemoteServerEvent::channel(),
-            RemoteServerEvent::Connected { device }
+            RemoteServerEvent::Connected {
+                uuid: info.uuid,
+                name: info.name
+            }
         );
+    }
+
+    /// Remote an active conncetion
+    fn remove_active(&self, uuid: &Uuid) {
+        { // Lock for server.active_map
+            let mut active_map = self.active_map.lock().unwrap();
+            active_map.remove(uuid);
+        }
+
+        self.app_handle.emit_all(
+            RemoteServerEvent::channel(),
+            RemoteServerEvent::RefreshActive
+        );
+    }
+
+    /// Check if a given device is active
+    fn is_active(&self, uuid: &Uuid) -> bool {
+        let active_map = self.active_map.lock().unwrap();
+        active_map.contains_key(uuid)
     }
 }
 
@@ -147,14 +195,16 @@ struct AccessResponse {
 #[derive(Serialize, Deserialize)]
 struct ActiveDeviceClaims {
     iss: String,
-    sub: Uuid
+    sub: Uuid,
+    name: String,
 }
 
 impl ActiveDeviceClaims {
-    fn new(uuid: Uuid) -> Self {
+    fn new(info: AccessInfo) -> Self {
         ActiveDeviceClaims {
             iss: "macropinna".to_string(),
-            sub: uuid
+            sub: info.uuid,
+            name: info.name
         }
     }
 }
@@ -183,10 +233,26 @@ impl RemoteServerManager {
 #[derive(Clone, Serialize)]
 enum RemoteServerEvent {
     RefreshPending,
-    // RefreshActive,
+    RefreshActive,
     Connected {
-        device: DeviceInfo
+        uuid: Uuid,
+        name: String
     }
+}
+
+#[derive(Debug, Deserialize)]
+enum RemoteControlEvent {
+    DPad(DPadEvent)
+}
+
+#[derive(Debug, Deserialize)]
+enum DPadEvent {
+    Up,
+    Down,
+    Left,
+    Right,
+    Enter,
+    Exit,
 }
 
 impl RemoteServerEvent {
@@ -214,9 +280,8 @@ fn spawn_server(server: Arc<ServerState>) {
             .and(with_server(server.clone()))
             .then(handle_register_uuid);
 
-        let ws = warp::path!("api" / "ws")
+        let ws = warp::path!("api" / "ws" / String)
             .and(warp::ws())
-            .and(warp::header::<String>("Authorization"))
             .and(with_server(server.clone()))
             .map(handle_ws);
 
@@ -281,13 +346,11 @@ async fn handle_register_uuid(uuid: Uuid, state: Arc<ServerState>) -> impl Reply
     
     // Wait for approval/rejection/timeout
     let res = match timeout(Duration::from_secs(PENDING_TIMEOUT_S), recv).await {
-        Ok(Ok(AccessApproval::Approve(device))) => {
-            log::info!("Approving access for {}", cleanup.uuid);
-
-            cleanup.state.add_active(cleanup.uuid.clone(), device);
+        Ok(Ok(AccessApproval::Approve(info))) => {
+            log::info!("Approving access for {} ({})", info.name, info.uuid);
 
             let key: Hmac<Sha256> = Hmac::new_from_slice(signer.as_bytes()).unwrap();
-            let claims = ActiveDeviceClaims::new(cleanup.uuid.clone());
+            let claims = ActiveDeviceClaims::new(info);
             let jwt = claims.sign_with_key(&key).unwrap();
 
             warp::reply::json(&AccessResponse {
@@ -322,7 +385,7 @@ async fn handle_register_uuid(uuid: Uuid, state: Arc<ServerState>) -> impl Reply
     res
 }
 
-fn handle_ws(ws: Ws, authorization: String, state: Arc<ServerState>) -> impl Reply {
+fn handle_ws(jwt: String, ws: ws::Ws, state: Arc<ServerState>) -> impl Reply {
     use hmac::{Hmac, Mac};
     use jwt::VerifyWithKey;
     use sha2::Sha256;
@@ -330,10 +393,10 @@ fn handle_ws(ws: Ws, authorization: String, state: Arc<ServerState>) -> impl Rep
     let signer = &state.signer;
     let key: Hmac<Sha256> = Hmac::new_from_slice(signer.as_bytes()).unwrap();
 
-    let claims: ActiveDeviceClaims = match authorization.verify_with_key(&key) {
+    let claims: ActiveDeviceClaims = match jwt.verify_with_key(&key) {
         Ok(claims) => claims,
         Err(err) => {
-            log::error!("Error while handling ws: {}", err);
+            log::error!("Error during WebSocket verification: {}", err);
             return warp::reply::with_status(
                 "unauthorized",
                 warp::http::StatusCode::UNAUTHORIZED
@@ -341,44 +404,63 @@ fn handle_ws(ws: Ws, authorization: String, state: Arc<ServerState>) -> impl Rep
         }
     };
 
-    { // Lock for server.active_map
-        let active_map = state.active_map.lock().unwrap();
-        if !active_map.contains_key(&claims.sub) {
-            log::error!("No active device found: {}", claims.sub);
-            return warp::reply::with_status(
-                "unauthorized",
-                warp::http::StatusCode::UNAUTHORIZED
-            ).into_response();
-        }
-    }
-
     ws.on_upgrade(move |socket| {
-        handle_ws_connection(socket)
+        handle_ws_connection(socket, claims, state)
     }).into_response()
 }
 
 /// Handler for an active, authenticated WebSocket connection.
-async fn handle_ws_connection(_socket: WebSocket) {
-    todo!()
+async fn handle_ws_connection(socket: ws::WebSocket, claims: ActiveDeviceClaims, state: Arc<ServerState>) {
+    use futures::StreamExt;
+    
+    let (ws_send, mut ws_recv) = socket.split();
+
+    let name = claims.name.clone();
+    let uuid = claims.sub.clone();
+    state.add_active(claims, ws_send);
+
+    while let Some(msg) = ws_recv.next().await {
+        match msg {
+            Ok(msg) if msg.is_text() => {
+                let msg = msg.to_str().unwrap();
+                match serde_json::from_str::<RemoteControlEvent>(msg) {
+                    Ok(event) => {
+                        log::info!("{:?}", event);
+                    }
+                    Err(err) => {
+                        log::error!("Error while deserializing WebSocket message \"{}\": {}", msg, err);
+                    }
+                }
+            },
+            Err(err) => {
+                log::error!("Error while handling WebSocket connection: {}", err);
+            },
+            _ => {
+                // 
+            }
+        }
+    }
+
+    log::info!("Connection dropped for {} ({})", name, uuid);
 }
 
 #[tauri::command]
-pub fn get_pending_list(remote_server: State<'_, RemoteServerManager>) -> Vec<DeviceInfo> {
+pub fn get_pending_info_list(remote_server: State<'_, RemoteServerManager>) -> Vec<AccessInfo> {
     let mut list = { // Lock for server.pending_map
         let pending_map = remote_server.state.pending_map.lock().unwrap();
-        pending_map.values().map(|val| (val.device.clone(), val.timestamp)).collect::<Vec<_>>()
+        pending_map.values().map(|val| (val.info.clone(), val.timestamp)).collect::<Vec<_>>()
     };
 
     list.sort_by_key(|(_, timestamp)| timestamp.clone());
 
-    list.into_iter().map(|(device, _)| device).collect()
+    list.into_iter().map(|(info, _)| info).collect()
 }
 
 #[tauri::command]
-pub fn get_active_list(remote_server: State<'_, RemoteServerManager>) -> Vec<DeviceInfo> {
+pub fn get_active_info_list(remote_server: State<'_, RemoteServerManager>) -> Vec<ActiveInfo> {
     let list = { // Lock for server.active_map
         let active_map = remote_server.state.active_map.lock().unwrap();
-        active_map.values().map(|val| val.clone()).collect::<Vec<_>>()
+        active_map.values().map(|val| val.info.clone()).collect::<Vec<_>>()
     };
 
     list
@@ -398,7 +480,7 @@ pub fn update_pending(remote_server: State<'_, RemoteServerManager>, uuid: Uuid,
     let pending = pending.unwrap();
     
     let _res = pending.send.send(match approve {
-        true => AccessApproval::Approve(pending.device),
+        true => AccessApproval::Approve(pending.info),
         false => AccessApproval::Reject
     });
 }
