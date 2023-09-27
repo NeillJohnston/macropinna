@@ -114,24 +114,32 @@ pub struct PlayerMetadataResponse {
 
 #[tauri::command]
 pub fn get_player_metadata() -> Option<PlayerMetadataResponse> {
-    use mpris::PlayerFinder;
-
-    let player = PlayerFinder::new()
-        .ok()?
-        .find_active()
-        .ok()?;
-
-    let metadata = player
-        .get_metadata()
-        .ok()?;
-
-    Some(PlayerMetadataResponse {
-        album_name: metadata.album_name().map(|s| s.into()),
-        disc_number: metadata.disc_number(),
-        track_title: metadata.title().map(|s| s.into()),
-        track_number: metadata.track_number(),
-        track_artists: metadata.artists().map(|v| v.into_iter().map(|s| s.into()).collect()),
-        track_length_us: metadata.length_in_microseconds(),
-        art_url: metadata.art_url().map(|s| s.into()),
-    })
+    #[cfg(unix)]
+    {
+        use mpris::PlayerFinder;
+    
+        let player = PlayerFinder::new()
+            .ok()?
+            .find_active()
+            .ok()?;
+    
+        let metadata = player
+            .get_metadata()
+            .ok()?;
+    
+        Some(PlayerMetadataResponse {
+            album_name: metadata.album_name().map(|s| s.into()),
+            disc_number: metadata.disc_number(),
+            track_title: metadata.title().map(|s| s.into()),
+            track_number: metadata.track_number(),
+            track_artists: metadata.artists().map(|v| v.into_iter().map(|s| s.into()).collect()),
+            track_length_us: metadata.length_in_microseconds(),
+            art_url: metadata.art_url().map(|s| s.into()),
+        })
+    }
+    // TODO figure out an mpris replacement for Windows
+    #[cfg(not(unix))]
+    {
+        None
+    }
 }
