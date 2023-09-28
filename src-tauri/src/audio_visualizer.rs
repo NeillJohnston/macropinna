@@ -143,22 +143,10 @@ impl AudioVisualizerHandler {
 
         let host = cpal::default_host();
 
-        let device = host
-            .devices()?
-            .filter(|dev| match dev.name() {
-                Ok(_name) => _name == name,
-                _ => false
-            })
-            .next()
-            .ok_or(anyhow::anyhow!("Could not find audio device {}", name))?;
+        let device = host.default_output_device().unwrap();
 
-        let config =
-            if is_input {
-                device.default_input_config()?
-            }
-            else {
-                device.default_output_config()?
-            };
+        let config = device.default_output_config()?;
+        
         let stream = match config.sample_format() {
             SampleFormat::F32 => self.build_stream::<f32>(device, config, is_input),
             SampleFormat::I16 => self.build_stream::<i16>(device, config, is_input),
