@@ -1,19 +1,8 @@
-use crate::{config::*, audio_visualizer::*};
+use crate::config::*;
 
 use serde::Serialize;
 use serde_json::Value as JsonValue;
 use tauri::State;
-
-#[tauri::command]
-pub fn get_config(config: State<'_, ConfigManager>) -> Config {
-    config.config.read().unwrap().clone()
-}
-
-#[tauri::command]
-pub fn set_config(config: State<'_, ConfigManager>, new_config: Config) {
-    *config.config.write().unwrap() = new_config;
-    config.save();
-}
 
 #[derive(Serialize)]
 pub struct WeatherResponse {
@@ -75,15 +64,4 @@ async fn _get_weather(config: State<'_, ConfigManager>) -> anyhow::Result<Weathe
             Ok(WeatherResponse { current, forecast })
         }
     }
-}
-
-#[derive(Serialize)]
-pub struct AudioSpectrumResponse {
-    pub data: Vec<f32>
-}
-
-#[tauri::command]
-pub fn get_audio_spectrum(audio_visualizer: State<'_, AudioVisualizerManager>) -> AudioSpectrumResponse {
-    let data = audio_visualizer.data.lock().unwrap();
-    AudioSpectrumResponse { data: data.data.clone() }
 }

@@ -1,6 +1,7 @@
 use serde::{Serialize, Deserialize};
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
+use tauri::State;
 
 pub struct ConfigManager {
     path: PathBuf,
@@ -158,3 +159,14 @@ impl<'a> VersionedDeserialize<'a> for ConfigV1 {
 }
 
 pub type Config = ConfigV1;
+
+#[tauri::command]
+pub fn get_config(config: State<'_, ConfigManager>) -> Config {
+    config.config.read().unwrap().clone()
+}
+
+#[tauri::command]
+pub fn set_config(config: State<'_, ConfigManager>, new_config: Config) {
+    *config.config.write().unwrap() = new_config;
+    config.save();
+}

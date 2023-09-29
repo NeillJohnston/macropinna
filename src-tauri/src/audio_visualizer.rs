@@ -3,6 +3,7 @@
 use cpal::{Stream, SupportedStreamConfig, Device, SizedSample};
 use spectrum_analyzer::FrequencySpectrum;
 use std::sync::{mpsc, Arc, Mutex};
+use tauri::State;
 
 use crate::config::ConfigManager;
 
@@ -260,4 +261,15 @@ impl AudioVisualizerHandler {
         let mut data = data.lock().unwrap();
         data.update(spectrum);
     }
+}
+
+#[derive(serde::Serialize)]
+pub struct AudioSpectrumResponse {
+    pub data: Vec<f32>
+}
+
+#[tauri::command]
+pub fn get_audio_spectrum(audio_visualizer: State<'_, AudioVisualizerManager>) -> AudioSpectrumResponse {
+    let data = audio_visualizer.data.lock().unwrap();
+    AudioSpectrumResponse { data: data.data.clone() }
 }

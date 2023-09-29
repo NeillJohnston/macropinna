@@ -5,10 +5,10 @@ use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Wry, Manager};
 
 mod audio_visualizer;
-mod commands;
 mod config;
 mod media_player;
 mod remote_server;
+mod weather;
 
 /// Global handle for the Tauri app, primarily used to expose the events API to
 /// to the remote server. Since Tauri only gives you access to events if you
@@ -66,10 +66,10 @@ async fn main() -> anyhow::Result<()> {
         .invoke_handler(tauri::generate_handler![
             // commands::keystone_correct,
             // TODO remove the commands module, it's not a useful abstraction
-            commands::get_config,
-            commands::set_config,
-            commands::get_weather,
-            commands::get_audio_spectrum,
+            config::get_config,
+            config::set_config,
+            weather::get_weather,
+            audio_visualizer::get_audio_spectrum,
             media_player::get_player_metadata,
             remote_server::get_pending_info_list,
             remote_server::get_active_info_list,
