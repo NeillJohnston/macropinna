@@ -7,6 +7,7 @@ use tauri::{AppHandle, Wry, Manager};
 mod audio_visualizer;
 mod commands;
 mod config;
+mod media_player;
 mod remote_server;
 
 /// Global handle for the Tauri app, primarily used to expose the events API to
@@ -45,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
         global_app_handle.clone()
     );
     
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default()
         .setup(move |app| {
             let mut handle = global_app_handle.0.lock().unwrap();
             *handle = Some(app.handle());
@@ -53,7 +54,15 @@ async fn main() -> anyhow::Result<()> {
         })
         .manage(config_manager)
         .manage(audio_visualizer_manager)
-        .manage(remote_manager)
+        .manage(remote_manager);
+
+    #[cfg(windows)]
+    {
+        let media_player_manager = media_player::MediaPlayerManager;
+        builder = builder.manage(media_player_manager);
+    }
+
+    builder
         .invoke_handler(tauri::generate_handler![
             // commands::keystone_correct,
             // TODO remove the commands module, it's not a useful abstraction
@@ -61,7 +70,7 @@ async fn main() -> anyhow::Result<()> {
             commands::set_config,
             commands::get_weather,
             commands::get_audio_spectrum,
-            commands::get_player_metadata,
+            media_player::get_player_metadata,
             remote_server::get_pending_info_list,
             remote_server::get_active_info_list,
             remote_server::update_pending,

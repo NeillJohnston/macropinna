@@ -107,6 +107,7 @@ dependencies = [
  "tokio",
  "uuid",
  "warp",
+ "win-gsmtc",
 ]
 
 [[package]]
@@ -3482,6 +3483,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "tap"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
+
+[[package]]
 name = "tar"
 version = "0.4.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4371,6 +4378,18 @@ dependencies = [
  "windows 0.39.0",
  "windows-bindgen",
  "windows-metadata",
+]
+
+[[package]]
+name = "win-gsmtc"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d1c4c26096081a37ac9fd78fee14c85781933cb65c28fa7200dc486a3b7a7a5"
+dependencies = [
+ "tap",
+ "tokio",
+ "tracing",
+ "windows 0.48.0",
 ]
 
 [[package]]
