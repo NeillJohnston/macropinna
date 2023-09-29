@@ -103,6 +103,7 @@ dependencies = [
  "spectrum-analyzer",
  "tauri",
  "tauri-build",
+ "tfc",
  "tokio",
  "uuid",
  "warp",
@@ -3709,6 +3710,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be55cf8942feac5c765c2c993422806843c9a9a45d4d5c407ad6dd2ea95eb9b6"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "tfc"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54f99968b5978ab5098180934becc543631211de4e950fe812fe6dcec135aecb"
+dependencies = [
+ "core-graphics",
+ "unicode-segmentation",
 ]
 
 [[package]]

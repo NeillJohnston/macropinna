@@ -1,4 +1,4 @@
-// Server communication
+import { writable, type Writable } from "svelte/store";
 
 export interface RegisterRequest {
     device_name: string;
@@ -17,14 +17,11 @@ export type RemoteControlEvent = {
     DPad: 'Up' | 'Down' | 'Left' | 'Right' | 'Enter' | 'Exit';
 }
 
-// A class that sends events over WebSocket
+// A thin wrapper around a WebSocket, to send events
 export class EventSocket {
     constructor(
         public ws: WebSocket,
-        public onClose: () => void
-    ) {
-        ws.addEventListener('close', onClose);
-    }
+    ) {}
 
     send(event: RemoteControlEvent) {
         this.ws.send(JSON.stringify(event));
@@ -77,10 +74,13 @@ class RequestBuilder {
     }
 }
 
-export const register = async (
+export const connect = async (
     request: RegisterRequest,
     onInit: (code: string) => void,
-): Promise<AccessResponse> => {
+    onAccept: () => void,
+    onReject: () => void,
+    onClose: () => void,
+) => {
     const res1 = await new RequestBuilder()
         .url('/api/register')
         .method('POST')
@@ -94,23 +94,29 @@ export const register = async (
         .url(`/api/register/${uuid}`)
         .method('POST')
         .response();
-    return res2.json() as AccessResponse;
-}
+    
+    const { jwt } = await res2.json() as AccessResponse;
 
-export const connect = async (jwt: string, onClose: () => void): Promise<EventSocket> => {
+    if (!jwt) {
+        onReject();
+        return;
+    }
+
     // Directly from https://stackoverflow.com/a/47472874, thank you user Eadz
     let url = new URL(`/api/ws/${jwt}`, window.location.href);
     url.protocol = url.protocol.replace('http', 'ws');
     
     const ws = new WebSocket(url.href);
 
-    ws.addEventListener('open', (event) => {
-        console.log(event);
+    ws.addEventListener('open', () => {
+        connection.set(new EventSocket(ws));
+        onAccept();
     });
-
-    return new Promise((resolve, reject) => {
-        ws.addEventListener('open', () => {
-            resolve(new EventSocket(ws, onClose));
-        });
+    
+    ws.addEventListener('close', () => {
+        connection.set(null);
+        onClose();
     });
 }
+
+export const connection: Writable<null | EventSocket> = writable(null);

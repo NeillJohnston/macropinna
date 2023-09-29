@@ -31,6 +31,7 @@ jwt = "0.16.0"
 uuid = { version = "1.4.1", features = ["v4", "serde"] }
 hmac = "0.12.1"
 sha2 = "0.10.7"
+tfc = "0.6.2"
 
 [target.'cfg(unix)'.dependencies]
 mpris = "2.0.1"

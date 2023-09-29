@@ -3,12 +3,14 @@
 //! Serves the remote static site and handles client connections, all handled
 //! through a single warp server.
 
+mod input;
+
 use crate::{
     GlobalAppHandle,
     config::ConfigManager,
 };
 
-use futures::stream::{SplitStream, SplitSink};
+use futures::stream::SplitSink;
 use serde::{Serialize, Deserialize};
 use std::{
     collections::BTreeMap,
@@ -17,7 +19,7 @@ use std::{
     time::{Instant, Duration}
 };
 use tauri::State;
-use tokio::{sync::oneshot, sync::mpsc, time::timeout};
+use tokio::{sync::oneshot, time::timeout};
 use uuid::Uuid;
 use warp::{
     ws,
@@ -34,12 +36,12 @@ struct ServerState {
     app_handle: GlobalAppHandle,
     port: u16,
     signer: Arc<String>,
+    input_ctx: input::Context,
     // State
     init_map: Mutex<BTreeMap<Uuid, AccessInit>>,
     pending_map: Mutex<BTreeMap<Uuid, AccessPending>>,
-    // 
     active_map: Mutex<BTreeMap<Uuid, Active>>,
-    // TODO store inactive devices (persistently) as well, this will probably
+    // TODO store inactive devices (persistently) as well, this will require
     // require some sort of database to be added
 }
 
@@ -135,7 +137,7 @@ impl ServerState {
             name: claims.name
         };
 
-        { // Lock for server.active_map
+        { // Lock for active_map
             let mut active_map = self.active_map.lock().unwrap();
             active_map.insert(claims.sub.clone(), Active {
                 info: info.clone(),
@@ -154,7 +156,7 @@ impl ServerState {
 
     /// Remote an active conncetion
     fn remove_active(&self, uuid: &Uuid) {
-        { // Lock for server.active_map
+        { // Lock for active_map
             let mut active_map = self.active_map.lock().unwrap();
             active_map.remove(uuid);
         }
@@ -163,12 +165,6 @@ impl ServerState {
             RemoteServerEvent::channel(),
             RemoteServerEvent::RefreshActive
         );
-    }
-
-    /// Check if a given device is active
-    fn is_active(&self, uuid: &Uuid) -> bool {
-        let active_map = self.active_map.lock().unwrap();
-        active_map.contains_key(uuid)
     }
 }
 
@@ -217,6 +213,7 @@ impl RemoteServerManager {
             port: config.remote_server.port,
             // TODO unhardcode
             signer: Arc::new("secret".to_string()),
+            input_ctx: input::Context::new(),
             init_map: Mutex::new(BTreeMap::new()),
             pending_map: Mutex::new(BTreeMap::new()),
             active_map: Mutex::new(BTreeMap::new()),
@@ -238,21 +235,6 @@ enum RemoteServerEvent {
         uuid: Uuid,
         name: String
     }
-}
-
-#[derive(Debug, Deserialize)]
-enum RemoteControlEvent {
-    DPad(DPadEvent)
-}
-
-#[derive(Debug, Deserialize)]
-enum DPadEvent {
-    Up,
-    Down,
-    Left,
-    Right,
-    Enter,
-    Exit,
 }
 
 impl RemoteServerEvent {
@@ -290,7 +272,7 @@ fn spawn_server(server: Arc<ServerState>) {
             .or(register_uuid)
             .or(ws);
 
-        warp::serve(routes).run(([127, 0, 0, 1], server.port)).await;
+        warp::serve(routes).run(([0, 0, 0, 0], server.port)).await;
     });
 }
 
@@ -423,9 +405,9 @@ async fn handle_ws_connection(socket: ws::WebSocket, claims: ActiveDeviceClaims,
         match msg {
             Ok(msg) if msg.is_text() => {
                 let msg = msg.to_str().unwrap();
-                match serde_json::from_str::<RemoteControlEvent>(msg) {
+                match serde_json::from_str::<input::RemoteControlEvent>(msg) {
                     Ok(event) => {
-                        log::info!("{:?}", event);
+                        state.input_ctx.play_event(event);
                     }
                     Err(err) => {
                         log::error!("Error while deserializing WebSocket message \"{}\": {}", msg, err);
@@ -435,13 +417,13 @@ async fn handle_ws_connection(socket: ws::WebSocket, claims: ActiveDeviceClaims,
             Err(err) => {
                 log::error!("Error while handling WebSocket connection: {}", err);
             },
-            _ => {
-                // 
-            }
+            // Other messages (including binary messages) are ignored
+            _ => {}
         }
     }
 
     log::info!("Connection dropped for {} ({})", name, uuid);
+    state.remove_active(&uuid);
 }
 
 #[tauri::command]

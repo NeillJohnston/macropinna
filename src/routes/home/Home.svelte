@@ -13,7 +13,7 @@
     export let goDown: () => void;
 
     // Enable/disable visual grid
-    const grid = true;
+    const grid = false;
 
     const GRID_X = 12;
     const GRID_Y = 12;
