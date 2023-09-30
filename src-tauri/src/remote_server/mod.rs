@@ -7,16 +7,17 @@ mod input;
 
 use crate::{
     GlobalAppHandle,
-    config::ConfigManager,
+    config::ConfigManager, PROJECT_DIRS,
 };
 
 use futures::stream::SplitSink;
 use serde::{Serialize, Deserialize};
 use std::{
     collections::BTreeMap,
-    sync::{Arc, Mutex},
     convert::Infallible,
-    time::{Instant, Duration}
+    path::PathBuf,
+    sync::{Arc, Mutex},
+    time::{Instant, Duration},
 };
 use tauri::State;
 use tokio::{sync::oneshot, time::timeout};
@@ -27,7 +28,6 @@ use warp::{
 };
 
 const PENDING_TIMEOUT_S: u64 = 60;
-
 pub struct RemoteServerManager {
     state: Arc<ServerState>,
 }
@@ -36,6 +36,8 @@ struct ServerState {
     app_handle: GlobalAppHandle,
     port: u16,
     signer: Arc<String>,
+    cert_path: Arc<PathBuf>,
+    key_path: Arc<PathBuf>,
     input_ctx: input::Context,
     // State
     init_map: Mutex<BTreeMap<Uuid, AccessInit>>,
@@ -208,11 +210,21 @@ impl ActiveDeviceClaims {
 impl RemoteServerManager {
     pub fn new(config: &ConfigManager, app_handle: GlobalAppHandle) -> Self {
         let config = config.config.read().unwrap();
+
+        let cert_path = PROJECT_DIRS.config_dir().join("cert.pem");
+        let key_path = PROJECT_DIRS.config_dir().join("key.pem");
+
+        ensure_cert(&cert_path, &key_path).map_err(|err| {
+            log::error!("Error while generating SSL cert: {}", err);
+        }).unwrap();
+
         let server = Arc::new(ServerState {
             app_handle,
             port: config.remote_server.port,
             // TODO unhardcode
             signer: Arc::new("secret".to_string()),
+            cert_path: Arc::new(cert_path),
+            key_path: Arc::new(key_path),
             input_ctx: input::Context::new(),
             init_map: Mutex::new(BTreeMap::new()),
             pending_map: Mutex::new(BTreeMap::new()),
@@ -225,6 +237,36 @@ impl RemoteServerManager {
             state: server
         }
     }
+}
+
+fn ensure_cert(cert_path: &PathBuf, key_path: &PathBuf) -> anyhow::Result<()> {
+    use std::{
+        fs::OpenOptions,
+        io::Write
+    };
+
+    if !(cert_path.exists() && key_path.exists()) {
+        log::info!("No cert found, generating a self-signed cert...");
+
+        let cert = rcgen::generate_simple_self_signed(vec![
+            "localhost".to_string()
+        ])?;
+
+        OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(&cert_path)?
+            .write_all(cert.serialize_pem()?.as_bytes())?;
+        OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(&key_path)?
+            .write_all(cert.serialize_private_key_pem().as_bytes())?;
+    }
+
+    Ok(())
 }
 
 #[derive(Clone, Serialize)]
@@ -243,28 +285,24 @@ impl RemoteServerEvent {
     }
 }
 
-fn spawn_server(server: Arc<ServerState>) {
+fn spawn_server(state: Arc<ServerState>) {
     tokio::task::spawn(async move {
         let index = warp::fs::dir("./remote-static");
 
         let register = warp::path!("api" / "register")
             .and(warp::post())
             .and(warp::body::json::<RegisterRequest>())
-            .and(with_server(server.clone()))
+            .and(with_state(state.clone()))
             .map(handle_register);
 
-        // Per https://security.stackexchange.com/questions/7705/does-ssl-tls-https-hide-the-urls-being-accessed:
-        // HTTPS does hide URLs, so using the uuid as a secret *should* be safe.
-        // However, honestly, it feels wrong, so I might change this later -
-        // maybe another JWT?
         let register_uuid = warp::path!("api" / "register" / Uuid)
             .and(warp::post())
-            .and(with_server(server.clone()))
+            .and(with_state(state.clone()))
             .then(handle_register_uuid);
 
         let ws = warp::path!("api" / "ws" / String)
             .and(warp::ws())
-            .and(with_server(server.clone()))
+            .and(with_state(state.clone()))
             .map(handle_ws);
 
         let routes = index
@@ -272,11 +310,16 @@ fn spawn_server(server: Arc<ServerState>) {
             .or(register_uuid)
             .or(ws);
 
-        warp::serve(routes).run(([0, 0, 0, 0], server.port)).await;
+        warp::serve(routes)
+            .tls()
+            .cert_path(state.cert_path.as_path())
+            .key_path(state.key_path.as_path())
+            .run(([0, 0, 0, 0], state.port))
+            .await;
     });
 }
 
-fn with_server(server: Arc<ServerState>) -> impl Filter<Extract = (Arc<ServerState>,), Error = Infallible> + Clone {
+fn with_state(server: Arc<ServerState>) -> impl Filter<Extract = (Arc<ServerState>,), Error = Infallible> + Clone {
     warp::any().map(move || server.clone())
 }
 

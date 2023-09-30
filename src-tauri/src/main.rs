@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use directories::ProjectDirs;
+use lazy_static::lazy_static;
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Wry, Manager};
 
@@ -26,6 +28,31 @@ impl GlobalAppHandle {
     } 
 }
 
+lazy_static! {
+    static ref PROJECT_DIRS: ProjectDirs = {
+        ProjectDirs::from(
+            "",
+            "Macropinna",
+            "Macropinna"
+        ).unwrap()
+    };
+}
+
+/// Initialize base directories
+fn init_directories() {
+    use std::fs;
+
+    if let Err(err) = fs::create_dir_all(PROJECT_DIRS.config_dir()) {
+        log::error!("{}", err);
+        panic!();
+    }
+
+    if let Err(err) = fs::create_dir_all(PROJECT_DIRS.data_dir()) {
+        log::error!("{}", err);
+        panic!();
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use config::ConfigManager;
@@ -36,8 +63,13 @@ async fn main() -> anyhow::Result<()> {
 
     let global_app_handle = GlobalAppHandle(Arc::new(Mutex::new(None)));
 
+    // Initialize project directories, managers (which may have their own
+    // initialization routines)
+
+    init_directories();
+
     // TODO test value here obvi
-    let config_manager = ConfigManager::new("../config.json");
+    let config_manager = ConfigManager::new();
 
     let audio_visualizer_manager = AudioVisualizerManager::new(&config_manager).unwrap();
 

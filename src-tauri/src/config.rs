@@ -9,13 +9,29 @@ pub struct ConfigManager {
 }
 
 impl ConfigManager {
-    pub fn new<P: AsRef<Path>>(path: P) -> Self {
-        let config = Self::_load(&path);
+    pub fn new() -> Self {
+        // TODO definitely redundant if this is only ever going to be hardcoded.
+        // Might be nice to let users change this based on environment vars, but
+        // I'm not sure if that's a common usecase
+        let path = crate::PROJECT_DIRS.config_dir().join("config.json");
+        log::info!("Reading config from {}", path.display());
 
-        ConfigManager {
-            path: path.as_ref().into(),
+        let config =
+            if !path.exists() {
+                Config::default()
+            }
+            else {
+                Self::_load(&path)
+            };
+
+        let config_manager = ConfigManager {
+            path,
             config: RwLock::new(config)
-        }
+        };
+
+        config_manager.save();
+
+        config_manager
     }
 
     pub fn save(&self) {

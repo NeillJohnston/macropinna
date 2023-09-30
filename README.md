@@ -24,6 +24,8 @@ This project's development environment depends on **Tauri** and **npm**:
 - [**Tauri** setup](https://tauri.app/v1/guides/getting-started/prerequisites)
 - [**npm** setup](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 
+**Platform-specific**: [cpal](https://crates.io/crates/cpal) requires ALSA dev files - install `libasound2-dev` on Debian/Ubuntu and `alsa-lib-devel` on Fedora.
+
 Now install packages for the two SvelteKit apps. From the project root:
 
 ```
