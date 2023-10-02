@@ -86,6 +86,31 @@ class Joystick {
         this.stack.push(id);
     }
 
+    // Standard id for a focusable input
+    focusId(id: string): string {
+        return id + ':focus';
+    }
+
+    // Enter target for a focusable input
+    focusEnter(id: string): Target {
+        return {
+            keep: true,
+            id: this.focusId(id),
+            action: () => {
+                document.getElementById(this.focusId(id))?.focus();
+            }
+        }
+    }
+
+    // Exit target for a focusable input
+    focusExit(id: string): Target {
+        return {
+            action: () => {
+                document.getElementById(this.focusId(id))?.blur();
+            }
+        }
+    }
+
     private _go(dir: Direction): boolean {
         const curr = this.stack.pop();
         if (!curr) throw new Error('Navigation stack is empty');

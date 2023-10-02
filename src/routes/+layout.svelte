@@ -1,9 +1,13 @@
 <script lang="ts">
 	import { listenConfig } from '$lib/api';
-    import { Direction, joystick } from '$lib/joystick';
+    import { Direction, joystick, nav } from '$lib/joystick';
 	import { onMount } from 'svelte';
 
     const handleRouting = (event: KeyboardEvent) => {
+        if (!$nav.endsWith(':focus')) {
+            event.preventDefault();
+        }
+
         let dir: Direction;
         switch (event.key) {
             case 'ArrowUp':

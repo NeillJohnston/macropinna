@@ -3,8 +3,9 @@
 
     export let id: string;
     export let and: boolean = true;
+    export let or: boolean = false;
 
-    $: selected = $nav === id && and;
+    $: selected = (($nav === id) && and) || or;
 </script>
 
 <div
