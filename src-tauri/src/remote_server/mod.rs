@@ -27,7 +27,7 @@ use warp::{
     reply::Reply, Filter,
 };
 
-const PENDING_TIMEOUT_S: u64 = 60;
+const PENDING_TIMEOUT_S: u64 = 60_000;
 pub struct RemoteServerManager {
     state: Arc<ServerState>,
 }
@@ -326,11 +326,8 @@ fn with_state(server: Arc<ServerState>) -> impl Filter<Extract = (Arc<ServerStat
 fn handle_register(req: RegisterRequest, state: Arc<ServerState>) -> impl Reply {
     let uuid = Uuid::new_v4();
     // Code is generated as the low 8 digits of a uuid, presumably random enough
-    // (Also split into 2 groups of digits for readability)
-    let code_uuid = Uuid::new_v4().as_u128();
-    let lower = code_uuid % 10000;
-    let upper = (code_uuid / 10000) % 10000;
-    let code = format!("{:04}-{:04}", upper, lower);
+    let code = Uuid::new_v4().as_u128() % 1_0000_0000;
+    let code = format!("{:08}", code);
 
     state.add_init(uuid.clone(), req.device_name, code.clone());
 

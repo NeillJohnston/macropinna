@@ -92,21 +92,21 @@ class Joystick {
     }
 
     // Enter target for a focusable input
-    focusEnter(id: string): Target {
+    focusEnter(focusId: string): Target {
         return {
             keep: true,
-            id: this.focusId(id),
+            id: focusId,
             action: () => {
-                document.getElementById(this.focusId(id))?.focus();
+                document.getElementById(focusId)?.focus();
             }
         }
     }
 
     // Exit target for a focusable input
-    focusExit(id: string): Target {
+    focusExit(focusId: string): Target {
         return {
             action: () => {
-                document.getElementById(this.focusId(id))?.blur();
+                document.getElementById(focusId)?.blur();
             }
         }
     }

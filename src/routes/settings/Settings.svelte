@@ -74,11 +74,11 @@
 >
     <div id="settings">
         <div id="primary" class="column">
-            <NavLabel id='settings' label='Settings' />
+            <NavLabel id='settings'>Settings</NavLabel>
         </div>
         <div id="secondary" class="column">
             {#each menu as item, index}
-            <NavLabel id={item.id} label={item.label} />
+            <NavLabel id={item.id}>{item.label}</NavLabel>
             {/each}
         </div>
         <div id="panel">

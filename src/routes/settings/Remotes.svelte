@@ -7,22 +7,14 @@
 	import Icon from "@iconify/svelte";
 	import { getPendingDevices, type AccessInfo, type RemoteServerEvent } from "$lib/api";
 	import NavLabel from "./NavLabel.svelte";
+	import CodeInput from "./CodeInput.svelte";
+	import RemotesModal from "./RemotesModal.svelte";
 
     let listIndex = 0;
     let list: AccessInfo[] = [];
 
     const set = (index: number) => {
         listIndex = Math.max(Math.min(index, list.length - 1), 0);
-    }
-
-    const approve = (uuid: string) => {
-        console.log(`Approving ${uuid}`);
-        invoke('update_pending', { uuid, approve: true });
-    };
-
-    const reject = (uuid: string) => {
-        console.log(`Rejecting ${uuid}`);
-        invoke('update_pending', { uuid, approve: false });
     }
 
     $: device = list.at(listIndex);
@@ -42,7 +34,7 @@
                 action: () => { set(listIndex + 1); }
             },
             enter: {
-                id: () => 'remotes/modal:reject',
+                id: 'remotes/modal:code',
                 keep: true,
                 action: () => {
                     if (!device) {
@@ -53,26 +45,6 @@
             exit: { alias: Direction.Left }
         });
 
-        joystick.register('remotes/modal:reject', {
-            left: {
-                id: 'remotes/modal:approve',
-            },
-            enter: {
-                action: () => device && reject(device.uuid)
-            },
-            exit: {}
-        });
-
-        joystick.register('remotes/modal:approve', {
-            right: {
-                id: 'remotes/modal:reject',
-            },
-            enter: {
-                action: () => device && approve(device.uuid)
-            },
-            exit: {}
-        });
-
         // TODO listen is an async function (that returns a cleanup function),
         // but we can't return Promises from onMount
         listen('remote_server', async (event) => {
@@ -81,6 +53,13 @@
 
             list = await getPendingDevices();
             set(listIndex);
+
+            // Clean up modal if necessary
+            if (!list.find(dev => dev.uuid === device?.uuid)) {
+                device = undefined;
+                // joystick.goFrom('remotes/modal:code', Direction.Exit);
+                // joystick.goFrom('remotes/modal:reject', Direction.Exit);
+            }
         });
 
         getPendingDevices().then(_list => {
@@ -91,7 +70,7 @@
 
 <div id="remotes">
     {#if list.length === 0}
-    <NavLabel id='remotes/list' label='(No devices waiting)' />
+    <NavLabel id='remotes/list'>(No devices waiting)</NavLabel>
     {:else}
     {#each list as device, index}
     <NavBox id='remotes/list' and={listIndex === index}>
@@ -102,30 +81,9 @@
     {/each}
     {/if}
 </div>
-<div class:hide={!showModal}>
-    <div id="modal-bg">
-        <div id="modal">
-            <div id="modal-content">
-                <div id="modal-info">
-                    <p>{device?.name}</p>
-                    <p>{device?.code}</p>
-                </div>
-                <div id="modal-buttons">
-                    <div class="button">
-                        <NavBox id='remotes/modal:approve'>
-                            <p><Icon icon='carbon:checkmark' inline />Approve</p>
-                        </NavBox>
-                    </div>
-                    <div class="button">
-                        <NavBox id='remotes/modal:reject'>
-                            <p><Icon icon='carbon:close' inline /> Reject</p>
-                        </NavBox>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+{#if showModal && device}
+<RemotesModal device={device} />
+{/if}
 
 <style>
     p {
@@ -142,61 +100,5 @@
         display: flex;
         align-items: center;
         padding: 0.5rem;
-    }
-    
-    .hide {
-        display: none;
-    }
-
-    #modal-bg {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        z-index: 1;
-        background-color: rgba(0, 0, 0, 0.5);
-    }
-
-    #modal {
-        width: auto;
-        height: 100%;
-        aspect-ratio: 1/1;
-        padding: 6rem;
-        box-sizing: border-box;
-    }
-
-    #modal-content {
-        width: 100%;
-        height: 100%;
-        border: 1px solid white;
-        background-color: black;
-        display: flex;
-        flex-direction: column;
-    }
-
-    #modal-info {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        text-align: center;
-    }
-
-    #modal-buttons {
-        display: flex;
-    }
-
-    .button {
-        flex: 1;
-        margin: 0.5rem;
-    }
-    
-    .button p {
-        text-align: center;
-        font-weight: bold;
-        margin: 0.5em;
     }
 </style>
