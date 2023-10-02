@@ -11,6 +11,7 @@ mod config;
 mod media_player;
 mod remote_server;
 mod weather;
+mod util;
 
 /// Global handle for the Tauri app, primarily used to expose the events API to
 /// to the remote server. Since Tauri only gives you access to events if you
@@ -68,8 +69,7 @@ async fn main() -> anyhow::Result<()> {
 
     init_directories();
 
-    // TODO test value here obvi
-    let config_manager = ConfigManager::new();
+    let config_manager = ConfigManager::new(global_app_handle.clone());
 
     let audio_visualizer_manager = AudioVisualizerManager::new(&config_manager).unwrap();
 
@@ -97,7 +97,6 @@ async fn main() -> anyhow::Result<()> {
     builder
         .invoke_handler(tauri::generate_handler![
             // commands::keystone_correct,
-            // TODO remove the commands module, it's not a useful abstraction
             config::get_config,
             config::set_config,
             weather::get_weather,

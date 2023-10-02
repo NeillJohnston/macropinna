@@ -33,8 +33,7 @@ struct AudioVisualizerHandler {
 
 enum AudioVisualizerMessage {
     SetDevice {
-        name: String,
-        is_input: bool
+        name: Option<String>
     }
 }
 
@@ -55,12 +54,12 @@ impl AudioVisualizerManager {
         });
 
         let config = config.config.read().unwrap();
-        let name = config.audio_device.name.clone();
+        let name = config.audio_device
+            .as_ref()
+            .map(|dev| dev.name.clone())
+            .clone();
 
-        send.send(AudioVisualizerMessage::SetDevice {
-            name,
-            is_input: true
-        })?;
+        send.send(AudioVisualizerMessage::SetDevice { name })?;
 
         Ok(AudioVisualizerManager { _send: send, data })
     }
@@ -132,37 +131,35 @@ impl AudioVisualizerHandler {
     fn run(mut self) {
         loop {
             match self.recv.recv().unwrap() {
-                AudioVisualizerMessage::SetDevice { name, is_input } => {
-                    self.load_device(&name, is_input).unwrap();
+                AudioVisualizerMessage::SetDevice { name } => {
+                    self.load_device(&name).unwrap();
                 }
             }
         }
     }
 
-    fn load_device(&mut self, name: &str, is_input: bool) -> anyhow::Result<()> {
+    fn load_device(&mut self, name: &Option<String>) -> anyhow::Result<()> {
         use cpal::{traits::*, SampleFormat};
 
         let host = cpal::default_host();
 
-        let device = host
-            .devices()?
-            .filter(|dev| match dev.name() {
-                Ok(_name) => _name == name,
-                _ => false
-            })
-            .next()
-            .ok_or(anyhow::anyhow!("Could not find audio device {}", name))?;
+        let device = match name {
+            Some(name) => host
+                .devices()?
+                .filter(|dev| match dev.name() {
+                    Ok(_name) => &_name == name,
+                    _ => false
+                })
+                .next()
+                .ok_or(anyhow::anyhow!("Could not find audio device {}", name))?,
+            None => host.default_output_device()
+                .ok_or(anyhow::anyhow!("Could not find default output device"))?
+        };
 
-        let config =
-            if is_input {
-                device.default_input_config()?
-            }
-            else {
-                device.default_output_config()?
-            };
+        let config = device.default_output_config()?;
         let stream = match config.sample_format() {
-            SampleFormat::F32 => self.build_stream::<f32>(device, config, is_input),
-            SampleFormat::I16 => self.build_stream::<i16>(device, config, is_input),
+            SampleFormat::F32 => self.build_stream::<f32>(device, config),
+            SampleFormat::I16 => self.build_stream::<i16>(device, config),
             // SampleFormat::I32 => self.build_stream::<i32>(device, config),
             _ => todo!()
         }?;
@@ -173,47 +170,27 @@ impl AudioVisualizerHandler {
         Ok(())
     }
 
-    fn build_stream<T: Into<f32> + SizedSample>(&self, device: Device, config: SupportedStreamConfig, is_input: bool) -> anyhow::Result<Stream> {
+    fn build_stream<T: Into<f32> + SizedSample>(&self, device: Device, config: SupportedStreamConfig) -> anyhow::Result<Stream> {
         use cpal::traits::*;
 
         let n_channels = config.channels() as usize;
         let data = self.data.clone();
 
-        let stream =
-            if is_input {
-                device.build_input_stream(
-                    &config.config(),
-                    move |samples: &[T], _info: &cpal::InputCallbackInfo| {
-                        Self::processor(
-                            samples,
-                            n_channels,
-                            config.sample_rate().0,
-                            data.clone()
-                        );
-                    },
-                    move |err| {
-                        log::error!("{}", err);
-                    },
-                    None
-                )?
-            }
-            else {
-                device.build_output_stream(
-                    &config.config(),
-                    move |samples: &mut[T], _info: &cpal::OutputCallbackInfo| {
-                        Self::processor(
-                            samples,
-                            n_channels,
-                            config.sample_rate().0,
-                            data.clone()
-                        );
-                    },
-                    move |err| {
-                        log::error!("{}", err);
-                    },
-                    None
-                )?
-            };
+        let stream = device.build_input_stream(
+            &config.config(),
+            move |samples: &[T], _info: &cpal::InputCallbackInfo| {
+                Self::processor(
+                    samples,
+                    n_channels,
+                    config.sample_rate().0,
+                    data.clone()
+                );
+            },
+            move |err| {
+                log::error!("{}", err);
+            },
+            None
+        )?;
 
         Ok(stream)
     }

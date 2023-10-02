@@ -88,7 +88,7 @@ impl ServerState {
     /// Add an initial connection
     fn add_init(&self, uuid: Uuid, name: String, code: String) {
         let mut init_map = self.init_map.lock().unwrap();
-        // TODO is there any sense in checking for collisions here
+
         init_map.insert(uuid.clone(), AccessInit {
             info: AccessInfo { uuid, name, code },
         });
@@ -215,7 +215,7 @@ impl RemoteServerManager {
         let key_path = PROJECT_DIRS.config_dir().join("key.pem");
 
         ensure_cert(&cert_path, &key_path).map_err(|err| {
-            log::error!("Error while generating SSL cert: {}", err);
+            log::error!("Error while generating cert: {}", err);
         }).unwrap();
 
         let server = Arc::new(ServerState {
@@ -344,7 +344,6 @@ async fn handle_register_uuid(uuid: Uuid, state: Arc<ServerState>) -> impl Reply
 
     // Custom cleanup struct to make sure we remove the `AccessPending` object
     // from `pending_map` even if we get dropped early
-    // TODO not sure if putting the struct/impl in here is cool or unhinged
     struct Cleanup {
         uuid: Uuid,
         state: Arc<ServerState>

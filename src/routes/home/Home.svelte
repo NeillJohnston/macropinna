@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { layout as _layout } from "$lib/layout";
+	import { config } from "$lib/api";
 	import { onMount } from "svelte";
 	import Clock from "./widgets/Clock.svelte";
 	import Todo from "./widgets/Todo.svelte";
@@ -19,8 +19,7 @@
     const GRID_Y = 12;
 
     let index = 0;
-    // TODO does this need to be reactive
-    $: screens = $_layout.home;
+    $: screens = $config.home.screens;
 
     const portionX = (n: number) => 100.0 * n / GRID_X;
     const portionY = (n: number) => 100.0 * n / GRID_Y;
@@ -53,11 +52,11 @@
             },
             left: {
                 keep: true,
-                action: () => { index = (index - 1 + $_layout.home.length) % $_layout.home.length; }
+                action: () => { index = (index - 1 + screens.length) % screens.length; }
             },
             right: {
                 keep: true,
-                action: () => { index = (index + 1) % $_layout.home.length; }
+                action: () => { index = (index + 1) % screens.length; }
             },
         });
     });

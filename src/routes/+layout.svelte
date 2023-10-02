@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { listenConfig } from '$lib/api';
     import { Direction, joystick } from '$lib/joystick';
 	import { onMount } from 'svelte';
 
@@ -34,6 +35,8 @@
         joystick.set(['home']);
 
         document.addEventListener('keydown', handleRouting);
+
+        listenConfig();
 
         return () => {
             document.removeEventListener('keydown', handleRouting);

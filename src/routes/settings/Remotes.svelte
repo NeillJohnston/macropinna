@@ -5,11 +5,11 @@
 	import NavBox from "./NavBox.svelte";
 	import { invoke } from "@tauri-apps/api";
 	import Icon from "@iconify/svelte";
-	import { getPendingDevices, type DeviceInfo, type RemoteServerEvent } from "$lib/api";
+	import { getPendingDevices, type AccessInfo, type RemoteServerEvent } from "$lib/api";
 	import NavLabel from "./NavLabel.svelte";
 
     let listIndex = 0;
-    let list: DeviceInfo[] = [];
+    let list: AccessInfo[] = [];
 
     const set = (index: number) => {
         listIndex = Math.max(Math.min(index, list.length - 1), 0);

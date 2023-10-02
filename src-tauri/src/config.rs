@@ -1,19 +1,37 @@
+use notify::RecommendedWatcher;
 use serde::{Serialize, Deserialize};
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use tauri::State;
 
+use crate::{PROJECT_DIRS, GlobalAppHandle};
+
 pub struct ConfigManager {
+    pub config: Arc<RwLock<Config>>,
     path: PathBuf,
-    pub config: RwLock<Config>
+    _watcher: notify::INotifyWatcher
+}
+
+#[derive(Clone, Serialize)]
+enum ConfigEvent {
+    Set {
+        config: Config
+    }
+}
+
+impl ConfigEvent {
+    fn channel() -> &'static str {
+        "config"
+    }
 }
 
 impl ConfigManager {
-    pub fn new() -> Self {
+    pub fn new(app_handle: GlobalAppHandle) -> Self {
+
         // TODO definitely redundant if this is only ever going to be hardcoded.
         // Might be nice to let users change this based on environment vars, but
         // I'm not sure if that's a common usecase
-        let path = crate::PROJECT_DIRS.config_dir().join("config.json");
+        let path = PROJECT_DIRS.config_dir().join("config.json");
         log::info!("Reading config from {}", path.display());
 
         let config =
@@ -21,17 +39,45 @@ impl ConfigManager {
                 Config::default()
             }
             else {
-                Self::_load(&path)
+                Self::load_from_path(&path).unwrap()
             };
+        let config = Arc::new(RwLock::new(config));
+
+        let watcher = Self::make_watcher(config.clone(), app_handle, path.clone());
 
         let config_manager = ConfigManager {
+            config,
             path,
-            config: RwLock::new(config)
+            _watcher: watcher,
         };
 
-        config_manager.save();
+        // config_manager.save();
 
         config_manager
+    }
+
+    fn make_watcher(config_rw: Arc<RwLock<Config>>, app_handle: GlobalAppHandle, path: PathBuf) -> RecommendedWatcher {
+        use notify::{Event, RecursiveMode, Result, Watcher};
+
+        let _path = path.clone();
+        let mut watcher = notify::recommended_watcher(
+            move |res: Result<Event>| {
+                log::info!("Watcher event: {:?}", res);
+                if let Ok(event) = res {
+                    if event.kind.is_modify() {
+                        if let Some(config) = ConfigManager::load_from_path(&_path) {
+                            *config_rw.write().unwrap() = config.clone();
+
+                            app_handle.emit_all(ConfigEvent::channel(), ConfigEvent::Set { config });
+                        }
+                    }
+                }
+            }
+        ).unwrap();
+
+        watcher.watch(&path, RecursiveMode::NonRecursive).unwrap();
+
+        watcher
     }
 
     pub fn save(&self) {
@@ -62,7 +108,7 @@ impl ConfigManager {
     //     *self.config.write().unwrap() = config;
     // }
 
-    fn _load<P: AsRef<Path>>(path: P) -> Config {
+    fn load_from_path<P: AsRef<Path>>(path: P) -> Option<Config> {
         use std::fs::read;
 
         let config = match read(path) {
@@ -73,13 +119,11 @@ impl ConfigManager {
             }
         };
 
-        match Config::versioned_deserialize(&config) {
-            Ok(config) => config,
-            Err(err) => {
+        Config::versioned_deserialize(&config)
+            .map_err(|err| {
                 log::error!("Fatal error while reading config file: {}", err);
-                panic!();
-            }
-        }
+            })
+            .ok()
     }
 }
 
@@ -121,12 +165,54 @@ impl<'a> VersionedDeserialize<'a> for () {
     }
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct ConfigV1 {
     pub name: String,
+    pub home: Home,
     pub weather: Option<Weather>,
-    pub audio_device: AudioVisualizer,
+    pub audio_device: Option<AudioDevice>,
     pub remote_server: RemoteServer
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Home {
+    screens: serde_json::Value
+}
+
+impl Default for Home {
+    fn default() -> Self {
+        // TODO shouldn't be here
+        Home {
+            screens: serde_json::json!([
+                {
+                    "clock": {
+                        "coords": { "x": 0, "y": 0, "w": 6, "h": 3 },
+                        "xAlign": "right",
+                        "yAlign": "middle"
+                    },
+                    "weather": {
+                        "coords": { "x": 6, "y": 0, "w": 6, "h": 3 },
+                        "xAlign": "left",
+                        "yAlign": "middle"
+                    },
+                    "todo": {
+                        "coords": { "x": 6, "y": 3, "w": 6, "h": 9 },
+                        "xAlign": "left",
+                    },
+                },
+                {
+                    "audioVisualizer": {
+                        "coords": { "x": 2, "y": 3, "w": 8, "h": 8 },
+                        "yAlign": "top"
+                    },
+                    "player": {
+                        "coords": { "x": 2, "y": 1, "w": 8, "h": 2 }
+                    }
+                }
+            ])
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -143,14 +229,8 @@ pub enum WeatherProvider {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AudioVisualizer {
+pub struct AudioDevice {
     pub name: String
-}
-
-impl Default for AudioVisualizer {
-    fn default() -> Self {
-        AudioVisualizer { name: "default".to_string() }
-    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
