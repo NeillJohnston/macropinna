@@ -89,8 +89,8 @@
     #modal-content {
         width: 100%;
         height: 100%;
-        border: 1px solid white;
-        background-color: black;
+        border: 1px solid var(--fg);
+        background-color: var(--bg);
         display: flex;
         flex-direction: column;
     }

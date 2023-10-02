@@ -86,7 +86,7 @@
 
     .bar {
         flex: 1;
-        background: white;
+        background: var(--fg);
         margin: 4px;
         transition: height linear 0.033s;
     }

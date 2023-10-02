@@ -36,6 +36,6 @@
     #inner {
         width: 100%;
         height: 100%;
-        border: 1px solid white;
+        border: 1px solid var(--fg);
     }
 </style>

@@ -30,7 +30,7 @@
     }
 
     .on {
-        border-color: white;
+        border-color: var(--fg);
         transition: border-color ease 0.2s;
     }
 </style>

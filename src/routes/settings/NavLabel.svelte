@@ -21,7 +21,7 @@
     }
 
     #underline {
-        border-top: 2px solid white;
+        border-top: 2px solid var(--fg);
     }
 
     .off {

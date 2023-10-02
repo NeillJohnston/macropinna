@@ -95,7 +95,7 @@
         left: 0;
         width: 120px;
         height: 100%;
-        background: linear-gradient(to right, black, rgb(0, 0, 0, 0));
+        background: linear-gradient(to right, var(--bg), rgb(0, 0, 0, 0));
         z-index: 1;
     }
 
@@ -105,7 +105,7 @@
         right: 0;
         width: 120px;
         height: 100%;
-        background: linear-gradient(to left, black, rgb(0, 0, 0, 0));
+        background: linear-gradient(to left, var(--bg), rgb(0, 0, 0, 0));
         z-index: 1;
     }
 </style>
