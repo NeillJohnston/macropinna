@@ -1,0 +1,66 @@
+{
+    "name": "User",
+    "home": {
+      "screens": [
+        {
+          "clock": {
+            "coords": {
+              "h": 3,
+              "w": 6,
+              "x": 0,
+              "y": 0
+            },
+            "xAlign": "right",
+            "yAlign": "middle"
+          },
+          "todo": {
+            "coords": {
+              "h": 9,
+              "w": 6,
+              "x": 6,
+              "y": 3
+            },
+            "xAlign": "left"
+          },
+          "weather": {
+            "coords": {
+              "h": 3,
+              "w": 6,
+              "x": 6,
+              "y": 0
+            },
+            "xAlign": "left",
+            "yAlign": "middle"
+          }
+        },
+        {
+          "audioVisualizer": {
+            "coords": {
+              "h": 8,
+              "w": 8,
+              "x": 2,
+              "y": 3
+            },
+            "yAlign": "top"
+          },
+          "player": {
+            "coords": {
+              "h": 2,
+              "w": 8,
+              "x": 2,
+              "y": 1
+            }
+          }
+        }
+      ]
+    },
+    "weather": {
+      "provider": "OpenWeatherMap",
+      "api_key": "d873eedb795dd1cf5b14cb66f25c7a00",
+      "lat": 29.65,
+      "long": -82.32
+    },
+    "remote_server": {
+      "port": 5174
+    }
+  }

@@ -166,7 +166,7 @@ impl<'a> VersionedDeserialize<'a> for () {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ConfigV1 {
     pub name: String,
     pub home: Home,
@@ -178,41 +178,6 @@ pub struct ConfigV1 {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Home {
     screens: serde_json::Value
-}
-
-impl Default for Home {
-    fn default() -> Self {
-        // TODO shouldn't be here
-        Home {
-            screens: serde_json::json!([
-                {
-                    "clock": {
-                        "coords": { "x": 0, "y": 0, "w": 6, "h": 3 },
-                        "xAlign": "right",
-                        "yAlign": "middle"
-                    },
-                    "weather": {
-                        "coords": { "x": 6, "y": 0, "w": 6, "h": 3 },
-                        "xAlign": "left",
-                        "yAlign": "middle"
-                    },
-                    "todo": {
-                        "coords": { "x": 6, "y": 3, "w": 6, "h": 9 },
-                        "xAlign": "left",
-                    },
-                },
-                {
-                    "audioVisualizer": {
-                        "coords": { "x": 2, "y": 3, "w": 8, "h": 8 },
-                        "yAlign": "top"
-                    },
-                    "player": {
-                        "coords": { "x": 2, "y": 1, "w": 8, "h": 2 }
-                    }
-                }
-            ])
-        }
-    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -255,6 +220,12 @@ impl<'a> VersionedDeserialize<'a> for ConfigV1 {
 }
 
 pub type Config = ConfigV1;
+
+impl Default for Config {
+    fn default() -> Self {
+        serde_json::from_str(include_str!("default.json")).unwrap()
+    }
+}
 
 #[tauri::command]
 pub fn get_config(config: State<'_, ConfigManager>) -> Config {
