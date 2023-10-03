@@ -16,7 +16,9 @@ pub struct Context {
 
 #[derive(Debug, serde::Deserialize)]
 pub enum RemoteControlEvent {
-    DPad(DPadDirection)
+    DPad(DPadDirection),
+    Text(String),
+    Keyboard(Key)
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -27,6 +29,12 @@ pub enum DPadDirection {
     Right,
     Enter,
     Exit,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub enum Key {
+    Backspace,
+    // Delete
 }
 
 impl Context {
@@ -42,6 +50,7 @@ impl Context {
             while let Ok(event) = recv.recv() {
                 use RemoteControlEvent::*;
                 use DPadDirection::*;
+                use Key::*;
                 match event {
                     DPad(dir) => {
                         let key = match dir {
@@ -51,6 +60,16 @@ impl Context {
                             Right => tfc::Key::RightArrow,
                             Enter => tfc::Key::Space,
                             Exit => tfc::Key::Escape,
+                        };
+
+                        context.key_click(key).unwrap();
+                    }
+                    Text(text) => {
+                        context.unicode_string(&text).unwrap();
+                    }
+                    Keyboard(key) => {
+                        let key = match key {
+                            Backspace => tfc::Key::DeleteOrBackspace
                         };
 
                         context.key_click(key).unwrap();

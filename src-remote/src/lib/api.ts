@@ -15,7 +15,8 @@ export interface AccessResponse {
 
 export type RemoteControlEvent = {
     DPad?: 'Up' | 'Down' | 'Left' | 'Right' | 'Enter' | 'Exit';
-    Keyboard?: string;
+    Text?: string;
+    Keyboard?: 'Backspace';
 }
 
 // A thin wrapper around a WebSocket, to send events

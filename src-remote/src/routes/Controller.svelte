@@ -7,6 +7,7 @@
     }
 </script>
 
+<Keyboard />
 <div id="controls">
     <div
         id="up"
@@ -49,7 +50,6 @@
         on:keypress={()=>{}}
     />
 </div>
-<Keyboard />
 
 <style>
     #controls {

@@ -8,7 +8,7 @@
     let mode: 'buffered' | 'immediate' = 'buffered';
 
     const sendImmediate = () => {
-        $connection?.send({ Keyboard: value });
+        $connection?.send({ Text: value });
 
         const len = value.length;
         placeholder += value;
@@ -16,7 +16,7 @@
 
         setTimeout(() => {
             placeholder = placeholder.slice(len);
-        }, 250);
+        }, 400);
     };
 
     const switchMode = () => {
@@ -26,10 +26,19 @@
             immediate: 'buffered'
         }[mode];
 
-        if (mode = 'immediate') {
+        if (mode === 'immediate') {
             sendImmediate();
         }
     };
+
+    const onKey = (event: any) => {
+        if (mode === 'immediate') {
+            const key = event.key;
+            if (key === 'Backspace') {
+                $connection?.send({ Keyboard: 'Backspace' });
+            }
+        }
+    }
 
     const onInput = () => {
         if (mode === 'immediate') {
@@ -38,7 +47,7 @@
     };
 
     const onSubmit = () => {
-        $connection?.send({ Keyboard: value + '\n' });
+        $connection?.send({ Text: value + '\n' });
         value = '';
     };
 </script>
@@ -52,6 +61,7 @@
                 type="text"
                 bind:value
                 on:input={onInput}
+                on:keydown={onKey}
                 placeholder={placeholder}
             />
         </form>
