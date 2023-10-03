@@ -24,7 +24,13 @@
     }
 
     :root {
-        color: #fff;
+        --fg: #ffffff;
+        --fg2: #888888;
+        --bg: #000000;
+        --bg2: #222222;
+        --err: #ff4444;
+
+        color: var(--fg);
         font-family: 'IBM Plex Sans';
         /*
         Font sizing is mostly based on rem units, which are based on this number.
@@ -45,7 +51,7 @@
         position: fixed;
         width: 100%;
         height: 100%;
-        background-color: #000;
+        background-color: var(--bg);
         top: 0;
         left: 0;
     }

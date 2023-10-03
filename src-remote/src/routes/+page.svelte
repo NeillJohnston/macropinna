@@ -2,31 +2,36 @@
 	import { onMount } from "svelte";
     import { connect, connection } from "$lib/api";
 	import Controller from "./Controller.svelte";
-
-    console.log('hello');
+    import TextInput from "./ui/TextInput.svelte";
+    import Button from "./ui/Button.svelte";
 
     let name = '';
     let code: string | null = null;
+    let error = '';
 
     $: connected = $connection !== null;
 
     const _connect = () => {
+        if (name.length === 0) {
+            error = 'Please provide a device name';
+            return;
+        }
+
         connect(
             { device_name: name },
             (_code: string) => {
                 code = _code;
             },
             () => {
-                console.log('Connected');
                 code = null;
             },
             () => {
-                console.log('Rejected');
                 code = null;
+                error = 'Device rejected';
             },
             () => {
-                console.log('Closed');
                 code = null;
+                error = 'Connection closed';
             }
         );
     };
@@ -36,10 +41,23 @@
 <Controller />
 {:else}
 <div id="root">
+    <div id="title">
+        <!-- Lmao this is so pretentious -->
+        macropinna::remote
+    </div>
     {#if !code}
-    <div id="name">
-        <input type="text" bind:value={name} />
-        <button on:click={_connect}>Go</button>
+    <div id="connect">
+        <div id="name-input">
+            <TextInput
+                bind:value={name}
+                onSubmit={_connect}
+                placeholder="Device name"
+            />
+        </div>
+        {#if error}
+        <div id="error">{error}</div>
+        {/if}
+        <Button onClick={_connect}>Connect</Button>
     </div>
     {:else}
     <div id="code" class="mono">
@@ -58,9 +76,31 @@
         justify-content: center;
     }
 
-    #name {}
+    #title {
+        position: fixed;
+        top: 0.5rem;
+        font-weight: bold;
+        font-size: 0.71rem;
+        letter-spacing: 0.1em;
+    }
+
+    #connect {
+        text-align: center;
+    }
+
+    #name-input {
+        margin-bottom: 0.5rem;
+    }
+
+    #error {
+        color: var(--err);
+        font-size: 0.71rem;
+        margin-bottom: 0.5rem;
+    }
 
     #code {
         font-size: 2.00rem;
+        font-weight: bold;
+        letter-spacing: 0.25rem;
     }
 </style>
