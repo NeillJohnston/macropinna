@@ -55,4 +55,17 @@
         top: 0;
         left: 0;
     }
+
+    /* https://stackoverflow.com/questions/924916/is-there-a-way-to-make-a-div-unselectable */
+    .no-select {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -o-user-select: none;
+        user-select: none;
+
+        /* pointer-events: none; */
+    }
 </style>

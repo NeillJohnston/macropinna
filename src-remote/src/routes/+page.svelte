@@ -9,7 +9,8 @@
     let code: string | null = null;
     let error = '';
 
-    $: connected = $connection !== null;
+    // $: connected = $connection !== null;
+    $: connected = true;
 
     const _connect = () => {
         if (name.length === 0) {
@@ -57,7 +58,7 @@
         {#if error}
         <div id="error">{error}</div>
         {/if}
-        <Button onClick={_connect}>Connect</Button>
+        <Button onClick={_connect}><span class="no-select">Connect</span></Button>
     </div>
     {:else}
     <div id="code" class="mono">
