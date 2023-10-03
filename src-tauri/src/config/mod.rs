@@ -9,7 +9,7 @@ use crate::{PROJECT_DIRS, GlobalAppHandle};
 pub struct ConfigManager {
     pub config: Arc<RwLock<Config>>,
     path: PathBuf,
-    _watcher: notify::INotifyWatcher
+    _watcher: notify::RecommendedWatcher
 }
 
 #[derive(Clone, Serialize)]
@@ -36,7 +36,11 @@ impl ConfigManager {
 
         let config =
             if !path.exists() {
-                Config::default()
+                let config = Config::default();
+
+                Self::save_to_path(&path, &config);
+
+                config
             }
             else {
                 Self::load_from_path(&path).unwrap()
@@ -50,8 +54,6 @@ impl ConfigManager {
             path,
             _watcher: watcher,
         };
-
-        // config_manager.save();
 
         config_manager
     }
@@ -81,6 +83,15 @@ impl ConfigManager {
     }
 
     pub fn save(&self) {
+        Self::save_to_path(&self.path, &self.config.read().unwrap());
+    }
+    
+    // pub fn load(&self) {
+    //     let config = Self::_load(&self.path);
+    //     *self.config.write().unwrap() = config;
+    // }
+
+    fn save_to_path<P: AsRef<Path>>(path: P, config: &Config) {
         use serde_json::ser::Serializer;
         use std::fs::OpenOptions;
 
@@ -88,7 +99,7 @@ impl ConfigManager {
             .write(true)
             .truncate(true)
             .create(true)
-            .open(&self.path);
+            .open(path);
         let file = match oo {
             Ok(file) => file,
             Err(err) => {
@@ -98,15 +109,10 @@ impl ConfigManager {
         };
 
         let mut serializer = Serializer::pretty(file);
-        if let Err(err) = self.config.read().unwrap().serialize(&mut serializer) {
+        if let Err(err) = config.serialize(&mut serializer) {
             log::error!("{}", err);
         }
     }
-    
-    // pub fn load(&self) {
-    //     let config = Self::_load(&self.path);
-    //     *self.config.write().unwrap() = config;
-    // }
 
     fn load_from_path<P: AsRef<Path>>(path: P) -> Option<Config> {
         use std::fs::read;
