@@ -7,16 +7,18 @@
     let placeholder = '';
     let mode: 'buffered' | 'immediate' = 'buffered';
 
+    const pushPlaceholder = (pushed: string) => {
+        placeholder += pushed;
+        setTimeout(() => {
+            placeholder = placeholder.slice(pushed.length);
+        }, 400);
+    }
+
     const sendImmediate = () => {
         $connection?.send({ Text: value });
 
-        const len = value.length;
-        placeholder += value;
+        pushPlaceholder(value);
         value = '';
-
-        setTimeout(() => {
-            placeholder = placeholder.slice(len);
-        }, 400);
     };
 
     const switchMode = () => {
@@ -31,11 +33,13 @@
         }
     };
 
-    const onKey = (event: any) => {
+    const onKey = (event: KeyboardEvent) => {
         if (mode === 'immediate') {
             const key = event.key;
             if (key === 'Backspace') {
                 $connection?.send({ Keyboard: 'Backspace' });
+
+                pushPlaceholder('\u232B');
             }
         }
     }

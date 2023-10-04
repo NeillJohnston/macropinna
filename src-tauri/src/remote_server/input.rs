@@ -9,6 +9,8 @@ use std::{
     thread::JoinHandle
 };
 
+use crate::util::numeric::try_f64_to_i32;
+
 pub struct Context {
     send: mpsc::Sender<RemoteControlEvent>,
     _handle: JoinHandle<()>
@@ -18,7 +20,12 @@ pub struct Context {
 pub enum RemoteControlEvent {
     DPad(DPadDirection),
     Text(String),
-    Keyboard(Key)
+    Keyboard(Key),
+    MouseMove {
+        dx: f64,
+        dy: f64,
+    },
+    MousePress(MouseButton)
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -37,6 +44,12 @@ pub enum Key {
     // Delete
 }
 
+#[derive(Debug, serde::Deserialize)]
+pub enum MouseButton {
+    LeftButton,
+    RightButton
+}
+
 impl Context {
     pub fn new() -> Self {
         use std::thread::spawn;
@@ -51,6 +64,8 @@ impl Context {
                 use RemoteControlEvent::*;
                 use DPadDirection::*;
                 use Key::*;
+                use MouseButton::*;
+
                 match event {
                     DPad(dir) => {
                         let key = match dir {
@@ -73,6 +88,25 @@ impl Context {
                         };
 
                         context.key_click(key).unwrap();
+                    }
+                    MouseMove { dx, dy } => {
+                        let dx = try_f64_to_i32(dx);
+                        let dy = try_f64_to_i32(dy);
+                        
+                        match (dx, dy) {
+                            (Some(dx), Some(dy)) => {
+                                context.mouse_move_rel(dx, dy).unwrap();
+                            },
+                            _ => {}
+                        };
+                    }
+                    MousePress(button) => {
+                        let button = match button {
+                            LeftButton => tfc::MouseButton::Left,
+                            RightButton => tfc::MouseButton::Right,
+                        };
+
+                        context.mouse_click(button).unwrap();
                     }
                 }
             }

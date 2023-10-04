@@ -17,6 +17,11 @@ export type RemoteControlEvent = {
     DPad?: 'Up' | 'Down' | 'Left' | 'Right' | 'Enter' | 'Exit';
     Text?: string;
     Keyboard?: 'Backspace';
+    MouseMove?: {
+        dx: number,
+        dy: number
+    },
+    MousePress?: 'LeftButton' | 'RightButton';
 }
 
 // A thin wrapper around a WebSocket, to send events
