@@ -39,9 +39,9 @@
         });
 
         return () => {
-            if ($nav.startsWith('remotes/modal')) {
-                joystick.go(Direction.Exit);
-            }
+            // Try exiting from both components
+            joystick.goFrom('remotes/modal:code', Direction.Exit);
+            joystick.goFrom('remotes/modal:reject', Direction.Exit);
         };
     })
 </script>

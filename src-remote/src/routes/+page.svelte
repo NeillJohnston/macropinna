@@ -15,6 +15,10 @@
     const onInit = (_code: string) => {
         code = _code;
     };
+
+    const onJwt = (jwt: string) => {
+        localStorage.setItem('auth-token', jwt);
+    };
     
     const onAccept = () => {
         code = null;
@@ -31,6 +35,10 @@
     };
 
     onMount(() => {
+        // TODO conditions for removing this from storage? Right now onClose is
+        // called whether the connection gets dropped or never established in
+        // the first place due to bad auth (which will happen once expiration is
+        // added to the auth API)
         const jwt = localStorage.getItem('auth-token');
         if (jwt) {
             connectWs(jwt, onAccept, onClose);
@@ -43,7 +51,7 @@
             return;
         }
 
-        connect({ device_name: name }, onInit, onAccept, onReject, onClose);
+        connect({ device_name: name }, onInit, onReject, onJwt, onAccept, onClose);
     };
 </script>
 

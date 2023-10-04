@@ -79,8 +79,9 @@ class RequestBuilder {
 export const connect = async (
     request: RegisterRequest,
     onInit: (code: string) => void,
-    onAccept: () => void,
     onReject: () => void,
+    onJwt: (jwt: string) => void,
+    onAccept: () => void,
     onClose: () => void,
 ) => {
     const res1 = await new RequestBuilder()
@@ -104,7 +105,7 @@ export const connect = async (
         return;
     }
 
-    localStorage.setItem('auth-token', jwt);
+    onJwt(jwt);
 
     await connectWs(jwt, onAccept, onClose);
 }
