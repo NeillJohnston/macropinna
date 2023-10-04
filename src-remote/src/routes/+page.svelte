@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-    import { connect, connection } from "$lib/api";
+    import { connect, connectWs, connection } from "$lib/api";
 	import Controller from "./Controller.svelte";
     import TextInput from "./ui/TextInput.svelte";
     import Button from "./ui/Button.svelte";
@@ -9,8 +9,33 @@
     let code: string | null = null;
     let error = '';
 
-    // $: connected = $connection !== null;
-    $: connected = true;
+    $: connected = $connection !== null;
+    // $: connected = true;
+
+    const onInit = (_code: string) => {
+        code = _code;
+    };
+    
+    const onAccept = () => {
+        code = null;
+    };
+
+    const onReject = () => {
+        code = null;
+        error = 'Device rejected';
+    };
+
+    const onClose = () => {
+        code = null;
+        error = 'Connection closed';
+    };
+
+    onMount(() => {
+        const jwt = localStorage.getItem('auth-token');
+        if (jwt) {
+            connectWs(jwt, onAccept, onClose);
+        }
+    });
 
     const _connect = () => {
         if (name.length === 0) {
@@ -18,23 +43,7 @@
             return;
         }
 
-        connect(
-            { device_name: name },
-            (_code: string) => {
-                code = _code;
-            },
-            () => {
-                code = null;
-            },
-            () => {
-                code = null;
-                error = 'Device rejected';
-            },
-            () => {
-                code = null;
-                error = 'Connection closed';
-            }
-        );
+        connect({ device_name: name }, onInit, onAccept, onReject, onClose);
     };
 </script>
 

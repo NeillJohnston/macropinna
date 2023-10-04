@@ -104,6 +104,16 @@ export const connect = async (
         return;
     }
 
+    localStorage.setItem('auth-token', jwt);
+
+    await connectWs(jwt, onAccept, onClose);
+}
+
+export const connectWs = async (
+    jwt: string,
+    onAccept: () => void,
+    onClose: () => void,
+) => {
     // Directly from https://stackoverflow.com/a/47472874, thank you user Eadz
     let url = new URL(`/api/ws/${jwt}`, window.location.href);
     url.protocol = url.protocol.replace('http', 'ws');
