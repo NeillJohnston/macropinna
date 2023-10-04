@@ -79,8 +79,14 @@
 
 <style>
     #keyboard {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        box-sizing: border-box;
         display: flex;
         padding: 8px;
+        background-color: var(--bg);
+        z-index: 1;
     }
 
     #text-input {

@@ -9,8 +9,8 @@
     let code: string | null = null;
     let error = '';
 
-    $: connected = $connection !== null;
-    // $: connected = true;
+    // $: connected = $connection !== null;
+    $: connected = true;
 
     const _connect = () => {
         if (name.length === 0) {
