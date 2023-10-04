@@ -11,8 +11,10 @@
         placeholder += pushed;
         setTimeout(() => {
             placeholder = placeholder.slice(pushed.length);
-        }, 400);
+        }, 800);
     }
+
+    let p = '';
 
     const sendImmediate = () => {
         $connection?.send({ Text: value });
@@ -34,12 +36,13 @@
     };
 
     const onKey = (event: KeyboardEvent) => {
+        // TODO this doesn't work for me because of my keyboard, and I suspect
+        // that other keyboards will be similar. Leaving it here because it
+        // won't actually harm anything
         if (mode === 'immediate') {
             const key = event.key;
             if (key === 'Backspace') {
-                $connection?.send({ Keyboard: 'Backspace' });
-
-                pushPlaceholder('\u232B');
+                sendBackspace();
             }
         }
     }
@@ -54,12 +57,27 @@
         $connection?.send({ Text: value + '\n' });
         value = '';
     };
+
+    const sendBackspace = () => {
+        $connection?.send({ Keyboard: 'Backspace' });
+
+        pushPlaceholder('\u232B');
+    }
 </script>
 
 <div id="keyboard">
     <!-- Not using the UI TextInput because this might require special styling/
     features that don't need to be supported there -->
+    <Button onClick={switchMode} >
+        <div id="mode-width">
+            <Icon icon={{
+                buffered: 'carbon:return',
+                immediate: 'carbon:arrow-right'
+            }[mode]} inline />
+        </div>
+    </Button>
     <div id="text-input">
+        {#if mode === 'buffered'}
         <form on:submit={onSubmit}>
             <input
                 type="text"
@@ -69,16 +87,30 @@
                 placeholder={placeholder}
             />
         </form>
+        {:else if mode === 'immediate'}
+        <input
+            type="password"
+            bind:value
+            on:input={onInput}
+            on:keydown={onKey}
+            placeholder={placeholder}
+        />
+        {/if}
     </div>
-    <div id="space" />
-    <Button onClick={switchMode} >
-        <div id="mode-width">
-            <Icon icon={{
-                buffered: 'carbon:return',
-                immediate: 'carbon:arrow-right'
-            }[mode]} inline />
-        </div>
-    </Button>
+    {#if mode === 'immediate'}
+    <!-- Prevents this button from blurring the input -->
+    <div
+        on:mousedown={(event) => { event.preventDefault(); }}
+        role="button"
+        tabindex="0"
+    >
+        <Button onClick={sendBackspace} >
+            <div id="mode-width">
+                <Icon icon='carbon:delete' inline />
+            </div>
+        </Button>
+    </div>
+    {/if}
 </div>
 
 <style>
@@ -99,10 +131,6 @@
         flex: 1;
     }
 
-    #space {
-        width: 8px;
-    }
-
     #mode-width {
         width: calc(1em + 4px);
         text-align: center;
@@ -112,6 +140,7 @@
         background-color: rgba(0, 0, 0, 0);
         border: none;
         outline: none;
+        size: 1;
 
         color: inherit;
         font: inherit;
