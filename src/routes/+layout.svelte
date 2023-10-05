@@ -3,6 +3,11 @@
     import { Direction, joystick, nav } from '$lib/joystick';
 	import { onMount } from 'svelte';
 
+    const hideCursorAfterMs = 3000;
+
+    let hideCursor = true;
+    let hideCursorTimer: number | undefined = undefined;
+
     const handleRouting = (event: KeyboardEvent) => {
         if (!$nav.endsWith(':focus')) {
             event.preventDefault();
@@ -40,6 +45,18 @@
 
         document.addEventListener('keydown', handleRouting);
 
+        document.addEventListener('mousemove', () => {
+            hideCursor = false;
+
+            if (hideCursorTimer !== undefined) {
+                clearTimeout(hideCursorTimer);
+            }
+
+            hideCursorTimer = setTimeout(() => {
+                hideCursor = true;
+            }, hideCursorAfterMs);
+        });
+
         listenConfig();
 
         return () => {
@@ -48,7 +65,10 @@
     })
 </script>
 
-<div id='app-root'>
+<div
+    id='app-root'
+    class:hide-cursor={hideCursor}
+>
     <slot />
 </div>
 
@@ -69,6 +89,10 @@
         font-family: 'IBM Plex Mono';
         font-weight: normal;
         src: url('/fonts/IBMPlexMono-Regular.ttf');
+    }
+
+    .hide-cursor {
+        cursor: none;
     }
 
     .mono {
