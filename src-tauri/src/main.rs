@@ -3,7 +3,7 @@
 
 use directories::ProjectDirs;
 use lazy_static::lazy_static;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, atomic::AtomicBool};
 use tauri::{AppHandle, Wry, Manager};
 
 mod audio_visualizer;
@@ -19,11 +19,14 @@ mod util;
 /// `Builder`, we have to take an excessively convoluted route to allow other
 /// threads access.
 #[derive(Clone)]
-pub struct GlobalAppHandle(Arc<Mutex<Option<AppHandle<Wry>>>>);
+pub struct GlobalAppHandle {
+    handle: Arc<Mutex<Option<AppHandle<Wry>>>>,
+    exists: Arc<AtomicBool>
+}
 
 impl GlobalAppHandle {
     pub fn emit_all<P: Clone + serde::Serialize>(&self, channel: &'static str, payload: P) {
-        let app_handle = self.0.lock().unwrap();
+        let app_handle = self.handle.lock().unwrap();
         let app_handle = app_handle.as_ref().unwrap();
         app_handle.emit_all(channel, payload).unwrap();
     } 
@@ -62,7 +65,10 @@ async fn main() -> anyhow::Result<()> {
 
     env_logger::init();
 
-    let global_app_handle = GlobalAppHandle(Arc::new(Mutex::new(None)));
+    let global_app_handle = GlobalAppHandle {
+        handle: Arc::new(Mutex::new(None)),
+        exists: Arc::new(AtomicBool::new(false))
+    };
 
     // Initialize project directories, managers (which may have their own
     // initialization routines)
@@ -80,8 +86,9 @@ async fn main() -> anyhow::Result<()> {
     
     let mut builder = tauri::Builder::default()
         .setup(move |app| {
-            let mut handle = global_app_handle.0.lock().unwrap();
+            let mut handle = global_app_handle.handle.lock().unwrap();
             *handle = Some(app.handle());
+            global_app_handle.exists.store(true, std::sync::atomic::Ordering::Relaxed);
             Ok(())
         })
         .manage(config_manager)

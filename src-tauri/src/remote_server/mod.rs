@@ -287,7 +287,21 @@ impl RemoteServerEvent {
 
 fn spawn_server(state: Arc<ServerState>) {
     tokio::task::spawn(async move {
-        let index = warp::fs::dir("./remote-static");
+        loop {
+            let exists = &state.app_handle.exists;
+            if exists.load(std::sync::atomic::Ordering::Relaxed) { break; }
+        }
+
+        let remote_static_path = state.app_handle.handle
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .path_resolver()
+            .resolve_resource("remote-static")
+            .unwrap();
+
+        let index = warp::fs::dir(remote_static_path);
 
         let register = warp::path!("api" / "register")
             .and(warp::post())

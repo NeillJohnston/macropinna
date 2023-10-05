@@ -83,10 +83,8 @@
         };
     }
 
-    let p: any[] = [];
     const adaptTouch = (cb: (event: PTEvent) => void): ((event: TouchEvent) => void) => {
         return (event) => {
-            p = [];
             for (const touch of event.changedTouches) {
                 cb({
                     id: touch.identifier,
@@ -94,8 +92,6 @@
                     x: touch.clientX,
                     y: touch.clientY
                 });
-
-                p.push(touch.identifier);
             }
         };
     }
@@ -118,7 +114,6 @@
 <div id="touchpad">
     <div id="toucharea" />
 </div>
-<p>{JSON.stringify(p)}</p>
 
 <style>
     #touchpad {
