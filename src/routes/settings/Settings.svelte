@@ -73,11 +73,15 @@
 >
     <div id="settings">
         <div id="primary" class="column">
-            <NavLabel id='settings'>Settings</NavLabel>
+            <div class="item">
+                <NavLabel id='settings'>Settings</NavLabel>
+            </div>
         </div>
         <div id="secondary" class="column">
             {#each menu as item, index}
-            <NavLabel id={item.id}>{item.label}</NavLabel>
+            <div class="item">
+                <NavLabel id={item.id}>{item.label}</NavLabel>
+            </div>
             {/each}
         </div>
         <div id="panel">
@@ -120,5 +124,9 @@
 
     .column {
         padding: 0.5rem 1rem;
+    }
+
+    .item {
+        padding: 0.5rem;
     }
 </style>
