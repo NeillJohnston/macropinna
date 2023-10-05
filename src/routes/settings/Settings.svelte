@@ -19,9 +19,8 @@
         {
             id: 'settings/remotes',
             label: 'Remotes',
-            component:
-            Remotes,
-            entrance: 'remotes/list'
+            component: Remotes,
+            entrance: 'remotes/showqr'
         },
     ];
 

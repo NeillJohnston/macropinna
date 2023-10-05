@@ -112,6 +112,7 @@ async fn main() -> anyhow::Result<()> {
             remote_server::get_pending_info_list,
             remote_server::get_active_info_list,
             remote_server::update_pending,
+            remote_server::ip::get_remote_server_ip,
         ])
         .run(tauri::generate_context!())?;
 

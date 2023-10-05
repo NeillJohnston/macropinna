@@ -59,7 +59,12 @@ export interface ActiveInfo {
     name: string;
 }
 
-export type RemoteServerEvent = 'RefreshPending';
+export type RemoteServerEvent = 'RefreshPending' | 'RefreshActive' | {
+    Connected: {
+        name: string;
+        uuid: string;
+    }
+};
 
 export const getPendingDevices = async (): Promise<AccessInfo[]> => {
     return await invoke('get_pending_info_list') as AccessInfo[];
@@ -67,4 +72,8 @@ export const getPendingDevices = async (): Promise<AccessInfo[]> => {
 
 export const getActiveDevices = async (): Promise<ActiveInfo[]> => {
     return await invoke('get_active_info_list') as ActiveInfo[];
+}
+
+export const getRemoteServerIp = async (): Promise<string | undefined> => {
+    return await invoke('get_remote_server_ip') as (string | undefined);
 }

@@ -39,6 +39,7 @@ rcgen = "0.11.2"
 serde_with = "3.3.0"
 notify = "6.1.1"
 async-trait = "0.1.73"
+get_if_addrs = "0.5.3"
 
 [target.'cfg(unix)'.dependencies]
 mpris = "2.0.1"

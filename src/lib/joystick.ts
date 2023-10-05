@@ -9,7 +9,7 @@ interface Target {
     // overall action into a stack push)
     keep?: boolean;
     // Target component id - can be just a string or a callback
-    id?: string | (() => string);
+    id?: string | (() => string | undefined);
     // Action to take after successfully navigating
     action?: () => void;
 }
@@ -52,6 +52,12 @@ class Joystick {
     // Immediately set the navigation stack
     set(stack: string[]) {
         this.stack = stack;
+    }
+
+    // Immediately set the top of the navigation stack
+    setTop(id: string) {
+        this.stack.pop();
+        this.stack.push(id);
     }
 
     // Register a new navigable component
@@ -143,7 +149,10 @@ class Joystick {
                 this.stack.push(target.id);
             }
             else {
-                this.stack.push(target.id());
+                const id = target.id();
+                if (id) {
+                    this.stack.push(id);
+                }
             }
         }
 

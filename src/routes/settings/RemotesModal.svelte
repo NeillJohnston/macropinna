@@ -6,6 +6,7 @@
 	import Icon from "@iconify/svelte";
 	import type { AccessInfo } from "$lib/api";
 	import CodeInput from "./CodeInput.svelte";
+	import Modal from "../ui/Modal.svelte";
 
     export let device: AccessInfo;
 
@@ -46,7 +47,7 @@
     })
 </script>
 
-<div id="modal-bg">
+<Modal>
     <div id="modal">
         <div id="modal-content">
             <div id="modal-info">
@@ -63,21 +64,9 @@
             </div>
         </div>
     </div>
-</div>
+</Modal>
 
 <style>
-    #modal-bg {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        z-index: 1;
-        background-color: rgba(0, 0, 0, 0.5);
-    }
-
     #modal {
         width: auto;
         height: 100%;

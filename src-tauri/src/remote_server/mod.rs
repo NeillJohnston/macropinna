@@ -3,6 +3,8 @@
 //! Serves the remote static site and handles client connections, all handled
 //! through a single warp server.
 
+pub mod ip;
+
 mod input;
 
 use crate::{
