@@ -294,6 +294,7 @@ fn spawn_server(state: Arc<ServerState>) {
             if exists.load(std::sync::atomic::Ordering::Relaxed) { break; }
         }
 
+        #[cfg(not(debug_assertions))]
         let remote_static_path = state.app_handle.handle
             .lock()
             .unwrap()
@@ -302,6 +303,8 @@ fn spawn_server(state: Arc<ServerState>) {
             .path_resolver()
             .resolve_resource("remote-static")
             .unwrap();
+        #[cfg(debug_assertions)]
+        let remote_static_path = "./remote-static";
 
         let index = warp::fs::dir(remote_static_path);
 

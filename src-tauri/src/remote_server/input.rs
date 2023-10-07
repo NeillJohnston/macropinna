@@ -25,7 +25,13 @@ pub enum RemoteControlEvent {
         dx: f64,
         dy: f64,
     },
-    MousePress(MouseButton)
+    MouseDown(MouseButton),
+    MouseUp(MouseButton),
+    MouseClick(MouseButton),
+    MouseScroll {
+        dx: f64,
+        dy: f64
+    },
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -47,7 +53,20 @@ pub enum Key {
 #[derive(Debug, serde::Deserialize)]
 pub enum MouseButton {
     LeftButton,
-    RightButton
+    RightButton,
+    MiddleButton
+}
+
+impl From<MouseButton> for tfc::MouseButton {
+    fn from(button: MouseButton) -> Self {
+        use MouseButton::*;
+
+        match button {
+            LeftButton => Self::Left,
+            RightButton => Self::Right,
+            MiddleButton => Self::Middle,
+        }
+    }
 }
 
 impl Context {
@@ -64,7 +83,6 @@ impl Context {
                 use RemoteControlEvent::*;
                 use DPadDirection::*;
                 use Key::*;
-                use MouseButton::*;
 
                 match event {
                     DPad(dir) => {
@@ -80,7 +98,17 @@ impl Context {
                         context.key_click(key).unwrap();
                     }
                     Text(text) => {
-                        context.unicode_string(&text).unwrap();
+                        for ch in text.chars() {
+                            match ch {
+                                '\n' => {
+                                    context.key_click(tfc::Key::ReturnOrEnter).unwrap();
+                                },
+                                ch => {
+                                    context.unicode_char(ch).unwrap();
+                                }
+                            }
+                        }
+                        // context.unicode_string(&text).unwrap();
                     }
                     Keyboard(key) => {
                         let key = match key {
@@ -100,13 +128,25 @@ impl Context {
                             _ => {}
                         };
                     }
-                    MousePress(button) => {
-                        let button = match button {
-                            LeftButton => tfc::MouseButton::Left,
-                            RightButton => tfc::MouseButton::Right,
+                    MouseDown(button) => {
+                        context.mouse_down(button.into()).unwrap();
+                    }
+                    MouseUp(button) => {
+                        context.mouse_up(button.into()).unwrap();
+                    }
+                    MouseClick(button) => {
+                        context.mouse_click(button.into()).unwrap();
+                    }
+                    MouseScroll { dx, dy } => {
+                        let dx = try_f64_to_i32(dx);
+                        let dy = try_f64_to_i32(dy);
+                        
+                        match (dx, dy) {
+                            (Some(dx), Some(dy)) => {
+                                context.mouse_scroll(dx, dy).unwrap();
+                            },
+                            _ => {}
                         };
-
-                        context.mouse_click(button).unwrap();
                     }
                 }
             }
