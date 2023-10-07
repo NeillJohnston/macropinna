@@ -33,9 +33,9 @@
 
     const moveSens = 4.0;
     const scrollSens = 4.0;
-    const velSmooth = 8.0;
-    // const moveAccel = 1.05;
-    // const scrollAccel = 1.0;
+    const velSmooth = 32.0;
+    const moveAccel = 1.0;
+    const scrollAccel = 1.0; // Honestly not sure why anyone would want this
     const singleTapDelayMs = 100;
     const doubleTapDelayMs = 150;
 
@@ -90,17 +90,28 @@
         }
     };
 
+    const goodPow = (base: number, exp: number) => (base < 0
+        ? -Math.pow(-base, exp)
+        : Math.pow(base, exp)
+    );
+
     const onMove = (event: PTEvent) => {
         const { id, x, y } = event;
-        const curr = pts.get(id)!;
+        const curr = pts.get(id);
+
+        // TODO occasionally dt is NaN or negative - I think that the calls to
+        // onMove might be happening out of order on occasion, maybe leading to
+        // an already-deleted curr or a non-monotonic timestamp
+        if (!curr) return;
+        const dt = event.timeStamp - curr.lastTime;
+        if (!Number.isFinite(dt) || dt <= 0) return;
 
         const dxRaw = x - curr.lastX;
         const dyRaw = y - curr.lastY;
 
-        const dt = event.timeStamp - curr.lastTime;
-        const vs = 1/(1 + dt / velSmooth);
-        const velX = vs * curr.velX + (1 - vs) * (dxRaw / dt);
-        const velY = vs * curr.velY + (1 - vs) * (dyRaw / dt)
+        const alpha = 1 - 1/(1 + dt / velSmooth);
+        const velX = alpha * (dxRaw / dt) + (1 - alpha) * curr.velX;
+        const velY = alpha * (dyRaw / dt) + (1 - alpha) * curr.velY;
 
         pts.set(id, {
             ...curr,
@@ -112,14 +123,15 @@
         });
 
         if (state === State.Moving || state === State.Dragging) {
-            const dx = moveSens * velX * dt;
-            const dy = moveSens * velY * dt;
+            const dx = moveSens * goodPow(velX, moveAccel) * dt;
+            const dy = moveSens * goodPow(velY, moveAccel) * dt;
 
             $connection?.send({ MouseMove: { dx, dy } });
         }
         else if (state === State.Scrolling) {
+            // TODO lol no horizontal scroll
             const dx = 0;
-            const dy = -scrollSens * velY * dt;
+            const dy = -scrollSens * goodPow(velY, scrollAccel) * dt;
 
             $connection?.send({ MouseScroll: { dx, dy } });
         }
