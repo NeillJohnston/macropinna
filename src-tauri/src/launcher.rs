@@ -22,6 +22,38 @@ impl LauncherManager {
     }
 }
 
+// Bring already-running processes to the foreground
+fn raise(finder: &str, is_regex: bool) -> bool {
+    #[cfg(unix)]
+    {
+        let windows = wmctrl::get_windows();
+
+        let window =
+            if is_regex {
+                wmctrl::utils::find_window_by_regexp(&windows, finder)
+            }
+            else {
+                wmctrl::utils::find_window_by_title(&windows, finder)
+            };
+
+        if let Some(window) = window {
+            window.raise();
+            return true;
+        }
+    }
+    #[cfg(windows)]
+    {
+        // TODO
+    }
+    
+    return false;
+}
+
+pub fn raise_home() {
+    // TODO lol more hardcoding
+    raise("^Macropinna$", true);
+}
+
 type LaunchError = String;
 
 #[tauri::command]
@@ -41,32 +73,15 @@ pub fn launch(
             .ok_or(format!("Could not find launcher \"{}\"", name))?
             .clone();
 
-        let shell = config.shell.clone().unwrap_or_else(|| manager.fallback_shell.clone());
+        let shell = config.shell
+            .clone()
+            .unwrap_or_else(|| manager.fallback_shell.clone());
 
         (launcher, shell)
     };
-    
-    // Bring already-running processes to the foreground
-    #[cfg(unix)]
-    {
-        let windows = wmctrl::get_windows();
 
-        let window =
-            if launcher.finder_is_regex == Some(true) {
-                wmctrl::utils::find_window_by_regexp(&windows, &launcher.finder)
-            }
-            else {
-                wmctrl::utils::find_window_by_title(&windows, &launcher.finder)
-            };
-
-        if let Some(window) = window {
-            window.raise();
-            return Ok(());
-        }
-    }
-    #[cfg(windows)]
-    {
-        // TODO
+    if raise(&launcher.finder, launcher.finder_is_regex.unwrap_or(false)) {
+        return Ok(());
     }
 
     let child = Command::new(&shell)

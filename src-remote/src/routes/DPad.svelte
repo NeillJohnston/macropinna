@@ -9,7 +9,7 @@
 <div id="controls" class="no-select">
     <div
         id="up"
-        class="button no-select"
+        class="button dpad-button no-select"
         on:click={() => onPress('Up')}
         role="button"
         tabindex="0"
@@ -40,7 +40,7 @@
         on:keypress={()=>{}}
     />
     <div
-        id="cen"
+        id="enter"
         class="button no-select"
         on:click={() => onPress('Enter')}
         role="button"
@@ -64,7 +64,7 @@
     #left  { clip-path: polygon(4% 66%, 0% 50%, 4% 34%, 32% 34%, 38% 40%, 38% 60%, 32% 66%); }
     #down  { clip-path: polygon(66% 96%, 50% 100%, 34% 96%, 34% 68%, 40% 62%, 60% 62%, 66% 68%); }
     #right { clip-path: polygon(96% 34%, 100% 50%, 96% 66%, 68% 66%, 62% 60%, 62% 40%, 68% 34%); }
-    #cen   { clip-path: polygon(40.8% 40.8%, 59.2% 40.8%, 59.2% 59.2%, 40.8% 59.2%); }
+    #enter { clip-path: polygon(40.8% 40.8%, 59.2% 40.8%, 59.2% 59.2%, 40.8% 59.2%); }
 
     .button {
         position: absolute;

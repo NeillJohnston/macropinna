@@ -230,7 +230,7 @@
     }
 
     #toucharea {
-        background-color: var(--fg2);
+        background-color: var(--bg2);
         width: 100%; /* Very landscape hostile */
         height: 100%;
         border-radius: 0.5rem;

@@ -9,7 +9,10 @@ use std::{
     thread::JoinHandle
 };
 
-use crate::util::numeric::try_f64_to_i32;
+use crate::{
+    launcher,
+    util::numeric::try_f64_to_i32
+};
 
 pub struct Context {
     send: mpsc::Sender<RemoteControlEvent>,
@@ -32,6 +35,7 @@ pub enum RemoteControlEvent {
         dx: f64,
         dy: f64
     },
+    Action(Action),
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -55,6 +59,12 @@ pub enum MouseButton {
     LeftButton,
     RightButton,
     MiddleButton
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub enum Action {
+    Home,
+    AltTab,
 }
 
 impl From<MouseButton> for tfc::MouseButton {
@@ -83,6 +93,7 @@ impl Context {
                 use RemoteControlEvent::*;
                 use DPadDirection::*;
                 use Key::*;
+                use self::Action::*;
 
                 match event {
                     DPad(dir) => {
@@ -147,6 +158,16 @@ impl Context {
                             },
                             _ => {}
                         };
+                    }
+                    Action(Home) => {
+                        launcher::raise_home();
+                    }
+                    Action(AltTab) => {
+                        // TODO i know it's literally called alt-tab, but this
+                        // should be configurable
+                        context.key_down(tfc::Key::Alt).unwrap();
+                        context.key_click(tfc::Key::Tab).unwrap();
+                        context.key_up(tfc::Key::Alt).unwrap();
                     }
                 }
             }

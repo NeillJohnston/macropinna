@@ -20,14 +20,15 @@ export type RemoteControlEvent = {
     MouseMove?: {
         dx: number,
         dy: number
-    },
+    };
     MouseDown?: 'LeftButton' | 'RightButton' | 'MiddleButton';
     MouseUp?: 'LeftButton' | 'RightButton' | 'MiddleButton';
     MouseClick?: 'LeftButton' | 'RightButton' | 'MiddleButton';
     MouseScroll?: {
         dx: number,
         dy: number
-    }
+    };
+    Action?: 'Home' | 'AltTab'
 }
 
 // A thin wrapper around a WebSocket, to send events
