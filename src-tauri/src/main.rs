@@ -8,6 +8,7 @@ use tauri::{AppHandle, Wry, Manager};
 
 mod audio_visualizer;
 mod config;
+mod launcher;
 mod media_player;
 mod remote_server;
 mod weather;
@@ -60,6 +61,7 @@ fn init_directories() {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use config::ConfigManager;
+    use launcher::LauncherManager;
     use audio_visualizer::AudioVisualizerManager;
     use remote_server::RemoteServerManager;
 
@@ -77,6 +79,8 @@ async fn main() -> anyhow::Result<()> {
 
     let config_manager = ConfigManager::new(global_app_handle.clone());
 
+    let launcher_manager = LauncherManager::new();
+
     let audio_visualizer_manager = AudioVisualizerManager::new(&config_manager).unwrap();
 
     let remote_manager = RemoteServerManager::new(
@@ -92,6 +96,7 @@ async fn main() -> anyhow::Result<()> {
             Ok(())
         })
         .manage(config_manager)
+        .manage(launcher_manager)
         .manage(audio_visualizer_manager)
         .manage(remote_manager);
 
@@ -106,6 +111,7 @@ async fn main() -> anyhow::Result<()> {
             // commands::keystone_correct,
             config::get_config,
             config::set_config,
+            launcher::launch,
             weather::get_weather,
             audio_visualizer::get_audio_spectrum,
             media_player::get_player_metadata,

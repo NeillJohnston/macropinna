@@ -54,6 +54,7 @@
         }
       ]
     },
+    "launchers": [],
     "weather": {
       "provider": "OpenWeatherMap",
       "api_key": "d873eedb795dd1cf5b14cb66f25c7a00",

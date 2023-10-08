@@ -115,6 +115,7 @@ dependencies = [
  "uuid",
  "warp",
  "win-gsmtc",
+ "wmctrl",
 ]
 
 [[package]]
@@ -4906,6 +4907,15 @@ checksum = "937f3df7948156640f46aacef17a70db0de5917bda9c92b0f751f3a955b588fc"
 dependencies = [
  "cfg-if",
  "windows-sys",
+]
+
+[[package]]
+name = "wmctrl"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74b5d929314a5777498ebe370550112cfb8585cdb34f02f88e7ec573e6e3992b"
+dependencies = [
+ "regex",
 ]
 
 [[package]]

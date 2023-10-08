@@ -6,6 +6,13 @@ import type { Layout } from "./layout";
 export interface Config {
     name: string;
     home: Layout;
+    launchers: {
+        name: string;
+        command: string;
+        finder: string;
+        finder_is_regex?: boolean;
+        image_path?: string;
+    }[];
     weather?: {
         provider: 'OpenWeatherMap',
         api_key: string;
@@ -29,6 +36,7 @@ interface ConfigEvent {
 // Providing a minimal config for typing purposes
 export const config = writable<Config>({
     name: '',
+    launchers: [],
     home: {
         screens: []
     },

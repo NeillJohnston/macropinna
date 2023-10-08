@@ -176,6 +176,8 @@ impl<'a> VersionedDeserialize<'a> for () {
 pub struct ConfigV1 {
     pub name: String,
     pub home: Home,
+    pub launchers: Vec<Launcher>,
+    pub shell: Option<String>,
     pub weather: Option<Weather>,
     pub audio_device: Option<AudioDevice>,
     pub remote_server: RemoteServer
@@ -183,7 +185,17 @@ pub struct ConfigV1 {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Home {
-    screens: serde_json::Value
+    pub screens: serde_json::Value
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Launcher {
+    pub name: String,
+    pub command: String,
+    pub finder: String,
+    pub finder_is_regex: Option<bool>,
+    pub image_path: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
