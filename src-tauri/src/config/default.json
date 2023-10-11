@@ -3,54 +3,75 @@
     "home": {
       "screens": [
         {
-          "clock": {
-            "coords": {
-              "h": 3,
-              "w": 6,
-              "x": 0,
-              "y": 0
+          "widgets": [
+            {
+              "name": "clock",
+              "coords": {
+                "h": 6,
+                "w": 12,
+                "x": 0,
+                "y": 0
+              },
+              "props": {
+                "xAlign": "right",
+                "yAlign": "top"
+              }
             },
-            "xAlign": "right",
-            "yAlign": "middle"
-          },
-          "todo": {
-            "coords": {
-              "h": 9,
-              "w": 6,
-              "x": 6,
-              "y": 3
-            },
-            "xAlign": "left"
-          },
-          "weather": {
-            "coords": {
-              "h": 3,
-              "w": 6,
-              "x": 6,
-              "y": 0
-            },
-            "xAlign": "left",
-            "yAlign": "middle"
-          }
+            {
+              "name": "weather",
+              "coords": {
+                "h": 4,
+                "w": 4,
+                "x": 6,
+                "y": 8
+              },
+              "props": {
+                "xAlign": "left",
+                "yAlign": "top"
+              }
+            }
+          ]
         },
         {
-          "audioVisualizer": {
-            "coords": {
-              "h": 8,
-              "w": 8,
-              "x": 2,
-              "y": 3
+          "widgets": [
+            {
+              "name": "audioVisualizer",
+              "coords": {
+                "h": 8,
+                "w": 8,
+                "x": 2,
+                "y": 3
+              },
+              "props": {
+                "yAlign": "top"
+              }
             },
-            "yAlign": "top"
-          },
-          "player": {
-            "coords": {
-              "h": 2,
-              "w": 8,
-              "x": 2,
-              "y": 1
+            {
+              "name": "player",
+              "coords": {
+                "h": 2,
+                "w": 8,
+                "x": 2,
+                "y": 1
+              }
             }
-          }
+          ]
+        },
+        {
+          "widgets": [
+            {
+              "name": "todo",
+              "coords": {
+                "h": 9,
+                "w": 6,
+                "x": 6,
+                "y": 3
+              },
+              "props": {
+                "xAlign": "left"
+              }
+            }
+          ]
         }
       ]
     },

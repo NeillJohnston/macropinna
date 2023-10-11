@@ -2,6 +2,8 @@
     import { invoke } from '@tauri-apps/api';
 	import { onMount } from 'svelte';
 
+    export let props: any;
+
     let artist: string | undefined = undefined;
     let title: string | undefined = undefined;
     let album: string | undefined = undefined;
@@ -23,7 +25,7 @@
 
 <div id="player">
     {#if url}
-    <img id="art" src={url} />
+    <img id="art" src={url} alt="Album art" />
     {/if}
     <div id="info">
         <p id="title">{title}</p>
@@ -64,18 +66,19 @@
         aspect-ratio: 1/1;
         margin-right: 0.5rem;
     }
-
-    #artist {
-        font-weight: bold;
-    }
     
     #title {
-        font-size: 2.00rem;
+        font-size: 1.41em;
+        font-weight: bold;
+    }
+
+    #artist {
+        font-size: 0.71em;
         font-weight: bold;
     }
 
     #album {
-        font-size: 0.71rem;
+        font-size: 0.71em;
         font-style: italic;
     }
 </style>

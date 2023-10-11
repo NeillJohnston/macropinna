@@ -1,41 +1,23 @@
+<script context="module">
+    export const GRID_X = 12;
+    export const GRID_Y = 12;
+</script>
+
 <script lang="ts">
 	import { config } from "$lib/api";
 	import { onMount } from "svelte";
-	import Clock from "./widgets/Clock.svelte";
-	import Todo from "./widgets/Todo.svelte";
-	import Weather from "./widgets/Weather.svelte";
     import { Direction, joystick } from '$lib/joystick';
-	import AudioVisualizer from "./widgets/AudioVisualizer.svelte";
 	import Screen from '../Screen.svelte';
-	import Player from "./widgets/Player.svelte";
+	import Widget from "./Widget.svelte";
 
     export let goUp: () => void;
     export let goDown: () => void;
 
     // Enable/disable visual grid
-    const grid = false;
-
-    const GRID_X = 12;
-    const GRID_Y = 12;
+    const grid = true;
 
     let index = 0;
     $: screens = $config.home.screens;
-
-    const portionX = (n: number) => 100.0 * n / GRID_X;
-    const portionY = (n: number) => 100.0 * n / GRID_Y;
-    const widgetCoords = (widget: { x: number, y: number, w: number, h: number }): string => {
-        if (!widget) {
-            return 'width: 0; height: 0';
-        }
-
-        let { x, y, w, h } = widget;
-        return `
-        left: ${portionX(x)}%;
-        top: ${portionY(y)}%;
-        width: ${portionX(w)}%;
-        height: ${portionY(h)}%;
-        `;
-    };
 
     const xRange = new Array(GRID_X);
     const yRange = new Array(GRID_Y);
@@ -83,32 +65,9 @@
                 {/each}
             </div>
             {/if}
-            <!-- Widgets -->
-            {#if screen.clock}
-            <div class="box" style={widgetCoords(screen.clock.coords)}>
-                <Clock props={screen.clock} />
-            </div>
-            {/if}
-            {#if screen.weather}
-            <div class="box" style={widgetCoords(screen.weather.coords)}>
-                <Weather props={screen.weather} />
-            </div>
-            {/if}
-            {#if screen.todo}
-            <div class="box" style={widgetCoords(screen.todo.coords)}>
-                <Todo />
-            </div>
-            {/if}
-            {#if screen.audioVisualizer}
-            <div class="box" style={widgetCoords(screen.audioVisualizer.coords)}>
-                <AudioVisualizer props={screen.audioVisualizer} />
-            </div>
-            {/if}
-            {#if screen.player}
-            <div class="box" style={widgetCoords(screen.player.coords)}>
-                <Player />
-            </div>
-            {/if}
+            {#each screen.widgets as { name, coords, props }}
+            <Widget name={name} coords={coords} props={props} />
+            {/each}
         </div>
         {/each}
     </div>
@@ -126,13 +85,6 @@
         width: 100%;
         height: 100%;
         position: absolute;
-    }
-
-    .box {
-        /* border: 1px solid #333; */
-        position: absolute;
-        box-sizing: border-box;
-        padding: 0.5rem;
     }
 
     #grid {

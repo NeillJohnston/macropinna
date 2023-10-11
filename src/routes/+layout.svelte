@@ -110,6 +110,8 @@
         /*
         Font sizing is mostly based on rem units, which are based on this number.
         For consistency, I'm using powers of sqrt(2) as the rem multiples, so:
+          - 0.25rem
+          - 0.35rem
           - 0.50rem
           - 0.71rem
           - 1.00rem
@@ -119,7 +121,7 @@
           - 4.00rem
         Can't imagine needing anything smaller/larger than these.
          */
-        font-size: 32px;
+        font-size: 4.167vh;
     }
 
     #app-root {

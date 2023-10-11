@@ -32,7 +32,7 @@ impl ConfigManager {
         // Might be nice to let users change this based on environment vars, but
         // I'm not sure if that's a common usecase
         let path = PROJECT_DIRS.config_dir().join("config.json");
-        log::info!("Reading config from {}", path.display());
+        log::info!("Config path: {}", path.display());
 
         let config =
             if !path.exists() {
@@ -114,10 +114,12 @@ impl ConfigManager {
         }
     }
 
-    fn load_from_path<P: AsRef<Path>>(path: P) -> Option<Config> {
+    fn load_from_path<P: AsRef<Path> + Clone>(path: P) -> Option<Config> {
         use std::fs::read;
 
-        let config = match read(path) {
+        log::info!("Reading config from {}", path.as_ref().display());
+
+        let config = match read(path.clone()) {
             Ok(bytes) => bytes,
             Err(err) => {
                 log::error!("Error while reading config file: {}", err);
@@ -127,7 +129,7 @@ impl ConfigManager {
 
         Config::versioned_deserialize(&config)
             .map_err(|err| {
-                log::error!("Fatal error while reading config file: {}", err);
+                log::error!("Error while reading config file: {}", err);
             })
             .ok()
     }
@@ -185,7 +187,27 @@ pub struct ConfigV1 {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Home {
-    pub screens: serde_json::Value
+    pub screens: Vec<Screen>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Screen {
+    pub widgets: Vec<Widget>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Widget {
+    pub name: String,
+    pub coords: Coords,
+    pub props: Option<serde_json::Value>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Coords {
+    x: f64,
+    y: f64,
+    w: f64,
+    h: f64,
 }
 
 #[serde_with::skip_serializing_none]

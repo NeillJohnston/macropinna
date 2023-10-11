@@ -1,9 +1,11 @@
 <script lang="ts">
-	import type { AudioVisualizer } from "$lib/layout";
+	import type { YAlign } from "$lib/layout";
 	import { invoke } from "@tauri-apps/api";
 	import { onMount } from "svelte";
 
-    export let props: AudioVisualizer;
+    export let props: {
+        yAlign: YAlign;
+    };
 
     // TODO put all of these params in props
 

@@ -1,9 +1,12 @@
 <script lang="ts">
-	import type { Clock } from '$lib/layout';
+	import type { XAlign, YAlign } from '$lib/layout';
     import strftime from 'strftime';
     import { onMount } from 'svelte';
 
-    export let props: Clock;
+    export let props: {
+        xAlign: XAlign;
+        yAlign: YAlign;
+    };
 
     // TODO unhardcode
     const timeFormat = '%A, %b %e%n%l:%M%P';
@@ -31,6 +34,7 @@
         width: 100%;
         height: 100%;
         display: flex;
+        flex-direction: column;
     }
 
     #text {
@@ -39,7 +43,7 @@
 
     p {
         margin: 0;
-        font-size: 2.00rem;
+        font-size: 2.00em;
         white-space: pre-line;
     }
 

@@ -1,11 +1,23 @@
 import { invoke } from "@tauri-apps/api";
 import { listen, type Event } from "@tauri-apps/api/event";
 import { writable } from "svelte/store";
-import type { Layout } from "./layout";
 
 export interface Config {
     name: string;
-    home: Layout;
+    home: {
+        screens: {
+            widgets: {
+                name: string;
+                coords: {
+                    x: number;
+                    y: number;
+                    w: number;
+                    h: number;
+                };
+                props?: any;
+            }[];
+        }[];
+    };
     launchers: {
         name: string;
         command: string;
