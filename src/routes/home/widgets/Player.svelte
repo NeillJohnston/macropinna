@@ -23,7 +23,7 @@
 
 <div id="player">
     {#if url}
-    <img id="art" src={url} />
+    <img id="art" src={url} alt="Album Art for Musical Artist"/>
     {/if}
     <div id="info">
         <p id="title">{title}</p>

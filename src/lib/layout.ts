@@ -8,6 +8,7 @@ interface Layout {
         clock?: Coords & Clock;
         weather?: Coords & Weather;
         todo?: Coords & Todo;
+        pomodoro?: Coords & Pomodoro;
         audioVisualizer?: Coords & AudioVisualizer;
         player?: Coords & Player;
     }[];
@@ -36,6 +37,11 @@ export interface Todo {
     xAlign: XAlign;
 }
 
+export interface Pomodoro {
+    xAlign: XAlign;
+    yAlign: YAlign;
+}
+
 export interface AudioVisualizer {
     yAlign: YAlign;
 }
@@ -59,6 +65,11 @@ export const layout = writable({
             todo: {
                 coords: { x: 6, y: 3, w: 6, h: 9 },
                 xAlign: 'left',
+            },
+            pomodoro: {
+                coords: { x: 4, y: 4, w: 2, h: 2 },
+                xAlign: 'right',
+                yAlign: 'top'
             },
         },
         {

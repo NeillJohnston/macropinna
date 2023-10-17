@@ -4,10 +4,12 @@
 	import Clock from "./widgets/Clock.svelte";
 	import Todo from "./widgets/Todo.svelte";
 	import Weather from "./widgets/Weather.svelte";
+    import Pomodoro from "./widgets/Pomodoro.svelte";
     import { Direction, joystick } from '$lib/joystick';
 	import AudioVisualizer from "./widgets/AudioVisualizer.svelte";
 	import Screen from '../Screen.svelte';
 	import Player from "./widgets/Player.svelte";
+
 
     export let goUp: () => void;
     export let goDown: () => void;
@@ -98,6 +100,11 @@
             {#if screen.todo}
             <div class="box" style={widgetCoords(screen.todo.coords)}>
                 <Todo />
+            </div>
+            {/if}
+            {#if screen.pomodoro}
+            <div class="box" style={widgetCoords(screen.pomodoro.coords)}>
+                <Pomodoro />
             </div>
             {/if}
             {#if screen.audioVisualizer}
