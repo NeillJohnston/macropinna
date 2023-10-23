@@ -88,7 +88,6 @@
     #weather {
         width: 100%;
         height: 100%;
-        font-size: 0.71em;
         white-space: pre-line;
         display: flex;
         flex-direction: column;
@@ -96,10 +95,12 @@
 
     #container {
         width: 100%;
+        padding: 0.25rem;
+        box-sizing: border-box;
     }
 
     #yapper {
-        font-size: 0.71em;
+        font-size: 0.50em;
     }
 
     p {
@@ -107,11 +108,11 @@
     }
 
     #heading {
-        font-size: 1.00em;
+        font-size: 0.71em;
     }
 
     #time {
-        font-size: 0.50em;
+        font-size: 0.35em;
     }
 
     .space {

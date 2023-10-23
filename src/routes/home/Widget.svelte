@@ -25,7 +25,7 @@
     top: ${portionY(coords.y)}%;
     width: ${portionX(coords.w)}%;
     height: ${portionY(coords.h)}%;
-    font-size: calc($1.00rem * ${coords.h});
+    font-size: calc(0.38rem * ${coords.h});
     `;
 </script>
 

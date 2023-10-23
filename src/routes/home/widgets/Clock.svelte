@@ -39,11 +39,13 @@
 
     #text {
         width: 100%;
+        padding: 0.25rem;
+        box-sizing: border-box;
     }
 
     p {
         margin: 0;
-        font-size: 2.00em;
+        font-size: 1.41em;
         white-space: pre-line;
     }
 
