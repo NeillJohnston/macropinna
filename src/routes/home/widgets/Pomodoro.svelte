@@ -1,9 +1,13 @@
 <script lang="ts">
 	// Todo: Unhardcode times and pull from config.json so user can customize length of Pomodoro modes in settings
 	import Icon from '@iconify/svelte';
+	import type { XAlign } from '$lib/layout';
+
+	export let props: {
+		xAlign: XAlign;
+	};
 
 	let timerType = 'pomodoro';
-	let pomodoroCount = 0;
 	let time = 1500; // Default value for seconds, renders with Pomodoro timer type first
 	let timer: number;
 
@@ -17,14 +21,18 @@
 	// Timer related variables and functions
 	let timeRemaining = time;
 	let running = false;
+	let paused = false;
+	let expired = false;
 
 	const start = () => {
 		running = true;
+		paused = false;
 		if (timeRemaining <= 0) return;
 
 		timer = setInterval(() => {
 			if (timeRemaining <= 0) {
 				clearInterval(timer);
+				expired = true;
 			} else {
 				timeRemaining--;
 			}
@@ -35,12 +43,15 @@
 		if (!running) return;
 		clearInterval(timer);
 		running = false;
+		paused = true;
 	};
 
 	const reset = () => {
 		clearInterval(timer);
 		timeRemaining = time;
 		running = false;
+		paused = false;
+		expired = false;
 	};
 
 	// Borrowed function to format time to HH:MM:SS
@@ -59,17 +70,11 @@
 
 	// Pomodoro specific functions
 	const setTimerType = (newType: string) => {
-		// Pause timer on switch
-		if (running) reset();
+		// Reset timer on switch
+		reset();
 
-		// Set new timer type based on UI
-		if (newType === 'pomodoro') {
-			timerType = 'pomodoro';
-		} else if (newType === 'short break') {
-			timerType = 'short break';
-		} else {
-			timerType = 'long break';
-		}
+		// Set new timer type
+		timerType = newType;
 
 		// Store new time based on timer type
 		const newTime = timerTypes.get(timerType);
@@ -77,31 +82,11 @@
 		timeRemaining = time;
 	};
 
-	// Auto advance pomodoro (WIP) - want to auto advance to short break, back to pomodoro, and then long break after a user-defined number of cycles has been completed
-	// const advancePomodoro = () => {
-	// 	// Advance by one Pomodoro, reset after 4
-	// 	if (pomodoroCount < 4) {
-	// 		if (pomodoroType === 'pomodoro') {
-	// 			pomodoroType = 'short break';
-	// 		} else if (pomodoroType === 'short break') {
-	// 			pomodoroCount++;
-	// 			pomodoroType = 'pomodoro';
-	// 		}
-	// 	} else {
-	// 		if (pomodoroType === 'long break') {
-	// 			pomodoroCount = 0;
-	// 			pomodoroType = 'pomodoro';
-	// 		} else {
-	// 			pomodoroType = 'long break';
-	// 		}
-	// 	}
-
-	// 	time = pomodoroTypes.get(pomodoroType) ?? 1500;
-	// 	timeRemaining = time;
-	// };
+	// TODO: Auto advance pomodoro (WIP) - want to auto advance to short break, back to pomodoro, and then long break after a user-defined number of cycles has been completed
+	const xAlignClass = props.xAlign;
 </script>
 
-<div id="pomodoro" class="container">
+<div id="pomodoro" class={xAlignClass}>
 	<p><strong>Focus Module</strong></p>
 	<div id="mode_buttons">
 		<button
@@ -129,8 +114,12 @@
 	<span id="timer">{formatTime(timeRemaining)}</span>
 	<br />
 	<div id="timer_controls">
-		{#if !running}
+		{#if !running && !paused}
 			<button id="start_pause" on:click={start}>Start</button>
+		{:else if paused}
+			<button id="start_pause" on:click={start}>Resume</button>
+		{:else if expired}
+			<button id="start_pause" on:click={reset}>Reset</button>
 		{:else}
 			<button id="start_pause" on:click={pause}>Pause</button>
 		{/if}
@@ -205,4 +194,13 @@
 	button:hover {
 		background-color: #d3d3d3;
 	}
+
+	 /* X/Y alignment classes */
+	.left   { text-align: left; }
+  .center { text-align: center; }
+  .right  { text-align: right; }
+
+  .top    { align-items: flex-start; }
+  .middle { align-items: center; }
+  .bottom { align-items: flex-end; }
 </style>
