@@ -3,8 +3,9 @@
 
     export let id: string;
     export let and: boolean = true;
+    export let or: boolean = false;
 
-    $: selected = $nav === id && and;
+    $: selected = (($nav === id) && and) || or;
 </script>
 
 <div
@@ -29,7 +30,7 @@
     }
 
     .on {
-        border-color: white;
+        border-color: var(--fg);
         transition: border-color ease 0.2s;
     }
 </style>

@@ -22,20 +22,27 @@
         box-sizing: border-box;
         padding: 80px;
         opacity: 50%;
+        font-size: 1.00rem;
+        font-weight: bold;
 
         transition:
             padding ease 0.4s,
-            opacity ease 0.4s;
+            opacity ease 0.4s,
+            font-size ease 0.4s;
     }
 
     #app.selected {
         padding: 0px;
         opacity: 100%;
+        font-size: 2.00rem;
     }
 
     #inner {
         width: 100%;
         height: 100%;
-        border: 1px solid white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--fg);
     }
 </style>

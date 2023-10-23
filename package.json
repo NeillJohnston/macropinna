@@ -32,6 +32,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@castlenine/svelte-qrcode": "^1.1.0",
 		"@tauri-apps/api": "^1.4.0",
 		"@types/js-quantities": "^1.6.3",
 		"@types/strftime": "^0.9.4",

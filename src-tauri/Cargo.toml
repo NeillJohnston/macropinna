@@ -26,11 +26,21 @@ tokio = { version = "1.32.0", features = ["full"] }
 futures = "0.3.28"
 cpal = "0.15.2"
 spectrum-analyzer = "1.4.0"
-warp = "0.3.5"
+warp = { version = "0.3.5", features = ["tls"] }
 jwt = "0.16.0"
 uuid = { version = "1.4.1", features = ["v4", "serde"] }
 hmac = "0.12.1"
 sha2 = "0.10.7"
+tfc = "0.6.2"
+win-gsmtc = "0.1.0"
+directories = "5.0.1"
+lazy_static = "1.4.0"
+rcgen = "0.11.2"
+serde_with = "3.3.0"
+notify = "6.1.1"
+async-trait = "0.1.73"
+get_if_addrs = "0.5.3"
+wmctrl = "0.1.8"
 
 [target.'cfg(unix)'.dependencies]
 mpris = "2.0.1"

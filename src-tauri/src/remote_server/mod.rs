@@ -3,29 +3,33 @@
 //! Serves the remote static site and handles client connections, all handled
 //! through a single warp server.
 
+pub mod ip;
+
+mod input;
+
 use crate::{
     GlobalAppHandle,
-    config::ConfigManager,
+    config::ConfigManager, PROJECT_DIRS,
 };
 
-use futures::stream::{SplitStream, SplitSink};
+use futures::stream::SplitSink;
 use serde::{Serialize, Deserialize};
 use std::{
     collections::BTreeMap,
-    sync::{Arc, Mutex},
     convert::Infallible,
-    time::{Instant, Duration}
+    path::PathBuf,
+    sync::{Arc, Mutex},
+    time::{Instant, Duration},
 };
 use tauri::State;
-use tokio::{sync::oneshot, sync::mpsc, time::timeout};
+use tokio::{sync::oneshot, time::timeout};
 use uuid::Uuid;
 use warp::{
     ws,
     reply::Reply, Filter,
 };
 
-const PENDING_TIMEOUT_S: u64 = 60;
-
+const PENDING_TIMEOUT_S: u64 = 60_000;
 pub struct RemoteServerManager {
     state: Arc<ServerState>,
 }
@@ -34,12 +38,14 @@ struct ServerState {
     app_handle: GlobalAppHandle,
     port: u16,
     signer: Arc<String>,
+    cert_path: Arc<PathBuf>,
+    key_path: Arc<PathBuf>,
+    input_ctx: input::Context,
     // State
     init_map: Mutex<BTreeMap<Uuid, AccessInit>>,
     pending_map: Mutex<BTreeMap<Uuid, AccessPending>>,
-    // 
     active_map: Mutex<BTreeMap<Uuid, Active>>,
-    // TODO store inactive devices (persistently) as well, this will probably
+    // TODO store inactive devices (persistently) as well, this will require
     // require some sort of database to be added
 }
 
@@ -84,7 +90,7 @@ impl ServerState {
     /// Add an initial connection
     fn add_init(&self, uuid: Uuid, name: String, code: String) {
         let mut init_map = self.init_map.lock().unwrap();
-        // TODO is there any sense in checking for collisions here
+
         init_map.insert(uuid.clone(), AccessInit {
             info: AccessInfo { uuid, name, code },
         });
@@ -135,7 +141,7 @@ impl ServerState {
             name: claims.name
         };
 
-        { // Lock for server.active_map
+        { // Lock for active_map
             let mut active_map = self.active_map.lock().unwrap();
             active_map.insert(claims.sub.clone(), Active {
                 info: info.clone(),
@@ -154,7 +160,7 @@ impl ServerState {
 
     /// Remote an active conncetion
     fn remove_active(&self, uuid: &Uuid) {
-        { // Lock for server.active_map
+        { // Lock for active_map
             let mut active_map = self.active_map.lock().unwrap();
             active_map.remove(uuid);
         }
@@ -163,12 +169,6 @@ impl ServerState {
             RemoteServerEvent::channel(),
             RemoteServerEvent::RefreshActive
         );
-    }
-
-    /// Check if a given device is active
-    fn is_active(&self, uuid: &Uuid) -> bool {
-        let active_map = self.active_map.lock().unwrap();
-        active_map.contains_key(uuid)
     }
 }
 
@@ -212,11 +212,22 @@ impl ActiveDeviceClaims {
 impl RemoteServerManager {
     pub fn new(config: &ConfigManager, app_handle: GlobalAppHandle) -> Self {
         let config = config.config.read().unwrap();
+
+        let cert_path = PROJECT_DIRS.config_dir().join("cert.pem");
+        let key_path = PROJECT_DIRS.config_dir().join("key.pem");
+
+        ensure_cert(&cert_path, &key_path).map_err(|err| {
+            log::error!("Error while generating cert: {}", err);
+        }).unwrap();
+
         let server = Arc::new(ServerState {
             app_handle,
             port: config.remote_server.port,
             // TODO unhardcode
             signer: Arc::new("secret".to_string()),
+            cert_path: Arc::new(cert_path),
+            key_path: Arc::new(key_path),
+            input_ctx: input::Context::new(),
             init_map: Mutex::new(BTreeMap::new()),
             pending_map: Mutex::new(BTreeMap::new()),
             active_map: Mutex::new(BTreeMap::new()),
@@ -230,6 +241,36 @@ impl RemoteServerManager {
     }
 }
 
+fn ensure_cert(cert_path: &PathBuf, key_path: &PathBuf) -> anyhow::Result<()> {
+    use std::{
+        fs::OpenOptions,
+        io::Write
+    };
+
+    if !(cert_path.exists() && key_path.exists()) {
+        log::info!("No cert found, generating a self-signed cert...");
+
+        let cert = rcgen::generate_simple_self_signed(vec![
+            "localhost".to_string()
+        ])?;
+
+        OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(&cert_path)?
+            .write_all(cert.serialize_pem()?.as_bytes())?;
+        OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(&key_path)?
+            .write_all(cert.serialize_private_key_pem().as_bytes())?;
+    }
+
+    Ok(())
+}
+
 #[derive(Clone, Serialize)]
 enum RemoteServerEvent {
     RefreshPending,
@@ -240,49 +281,47 @@ enum RemoteServerEvent {
     }
 }
 
-#[derive(Debug, Deserialize)]
-enum RemoteControlEvent {
-    DPad(DPadEvent)
-}
-
-#[derive(Debug, Deserialize)]
-enum DPadEvent {
-    Up,
-    Down,
-    Left,
-    Right,
-    Enter,
-    Exit,
-}
-
 impl RemoteServerEvent {
     fn channel() -> &'static str {
         "remote_server"
     }
 }
 
-fn spawn_server(server: Arc<ServerState>) {
+fn spawn_server(state: Arc<ServerState>) {
     tokio::task::spawn(async move {
-        let index = warp::fs::dir("./remote-static");
+        loop {
+            let exists = &state.app_handle.exists;
+            if exists.load(std::sync::atomic::Ordering::Relaxed) { break; }
+        }
+
+        #[cfg(not(debug_assertions))]
+        let remote_static_path = state.app_handle.handle
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .path_resolver()
+            .resolve_resource("remote-static")
+            .unwrap();
+        #[cfg(debug_assertions)]
+        let remote_static_path = "./remote-static";
+
+        let index = warp::fs::dir(remote_static_path);
 
         let register = warp::path!("api" / "register")
             .and(warp::post())
             .and(warp::body::json::<RegisterRequest>())
-            .and(with_server(server.clone()))
+            .and(with_state(state.clone()))
             .map(handle_register);
 
-        // Per https://security.stackexchange.com/questions/7705/does-ssl-tls-https-hide-the-urls-being-accessed:
-        // HTTPS does hide URLs, so using the uuid as a secret *should* be safe.
-        // However, honestly, it feels wrong, so I might change this later -
-        // maybe another JWT?
         let register_uuid = warp::path!("api" / "register" / Uuid)
             .and(warp::post())
-            .and(with_server(server.clone()))
+            .and(with_state(state.clone()))
             .then(handle_register_uuid);
 
         let ws = warp::path!("api" / "ws" / String)
             .and(warp::ws())
-            .and(with_server(server.clone()))
+            .and(with_state(state.clone()))
             .map(handle_ws);
 
         let routes = index
@@ -290,22 +329,24 @@ fn spawn_server(server: Arc<ServerState>) {
             .or(register_uuid)
             .or(ws);
 
-        warp::serve(routes).run(([127, 0, 0, 1], server.port)).await;
+        warp::serve(routes)
+            .tls()
+            .cert_path(state.cert_path.as_path())
+            .key_path(state.key_path.as_path())
+            .run(([0, 0, 0, 0], state.port))
+            .await;
     });
 }
 
-fn with_server(server: Arc<ServerState>) -> impl Filter<Extract = (Arc<ServerState>,), Error = Infallible> + Clone {
+fn with_state(server: Arc<ServerState>) -> impl Filter<Extract = (Arc<ServerState>,), Error = Infallible> + Clone {
     warp::any().map(move || server.clone())
 }
 
 fn handle_register(req: RegisterRequest, state: Arc<ServerState>) -> impl Reply {
     let uuid = Uuid::new_v4();
     // Code is generated as the low 8 digits of a uuid, presumably random enough
-    // (Also split into 2 groups of digits for readability)
-    let code_uuid = Uuid::new_v4().as_u128();
-    let lower = code_uuid % 10000;
-    let upper = (code_uuid / 10000) % 10000;
-    let code = format!("{:04}-{:04}", upper, lower);
+    let code = Uuid::new_v4().as_u128() % 1_0000_0000;
+    let code = format!("{:08}", code);
 
     state.add_init(uuid.clone(), req.device_name, code.clone());
 
@@ -319,7 +360,6 @@ async fn handle_register_uuid(uuid: Uuid, state: Arc<ServerState>) -> impl Reply
 
     // Custom cleanup struct to make sure we remove the `AccessPending` object
     // from `pending_map` even if we get dropped early
-    // TODO not sure if putting the struct/impl in here is cool or unhinged
     struct Cleanup {
         uuid: Uuid,
         state: Arc<ServerState>
@@ -423,9 +463,9 @@ async fn handle_ws_connection(socket: ws::WebSocket, claims: ActiveDeviceClaims,
         match msg {
             Ok(msg) if msg.is_text() => {
                 let msg = msg.to_str().unwrap();
-                match serde_json::from_str::<RemoteControlEvent>(msg) {
+                match serde_json::from_str::<input::RemoteControlEvent>(msg) {
                     Ok(event) => {
-                        log::info!("{:?}", event);
+                        state.input_ctx.play_event(event);
                     }
                     Err(err) => {
                         log::error!("Error while deserializing WebSocket message \"{}\": {}", msg, err);
@@ -435,13 +475,13 @@ async fn handle_ws_connection(socket: ws::WebSocket, claims: ActiveDeviceClaims,
             Err(err) => {
                 log::error!("Error while handling WebSocket connection: {}", err);
             },
-            _ => {
-                // 
-            }
+            // Other messages (including binary messages) are ignored
+            _ => {}
         }
     }
 
     log::info!("Connection dropped for {} ({})", name, uuid);
+    state.remove_active(&uuid);
 }
 
 #[tauri::command]

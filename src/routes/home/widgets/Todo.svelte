@@ -1,5 +1,10 @@
-<script>
+<script lang="ts">
+	import type { XAlign } from "$lib/layout";
 	import Icon from "@iconify/svelte";
+
+    export let props: {
+        xAlign: XAlign;
+    };
 
     const list = [
         {
@@ -14,7 +19,7 @@
 </script>
 
 <div id="todo">
-    <p><strong>Today's tasks:</strong></p>
+    <p id="title"><strong>Today's tasks:</strong></p>
     <ul>
         {#each list as item}
         <p>
@@ -26,6 +31,10 @@
 </div>
 
 <style>
+    #title {
+        font-size: 1.00rem;
+    }
+
     p {
         margin: 0;
     }

@@ -2,13 +2,12 @@
 	import { nav } from "$lib/joystick";
 
     export let id: string;
-    export let label: string;
 
     $: selected = $nav === id;
 </script>
 
 <div id="navlabel">
-    <p>{label}</p>
+    <slot />
     <div
         id="underline"
         class:off={!selected}
@@ -18,15 +17,11 @@
 
 <style>
     #navlabel {
-        margin: 0.5rem;
-    }
-
-    p {
-        margin: 0;
+        /* margin: 0.5rem; */
     }
 
     #underline {
-        border-top: 2px solid white;
+        border-top: 2px solid var(--fg);
     }
 
     .off {

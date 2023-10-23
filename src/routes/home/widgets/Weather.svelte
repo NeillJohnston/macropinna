@@ -1,12 +1,15 @@
 <script lang="ts">
-	import type { Weather } from "$lib/layout";
+	import type { XAlign, YAlign } from "$lib/layout";
 	import Yapper from "./Yapper.svelte";
     import { invoke } from '@tauri-apps/api';
     import { onMount } from "svelte";
     import Qty from 'js-quantities';
     import strftime from 'strftime';
 
-    export let props: Weather;
+    export let props: {
+        xAlign: XAlign;
+        yAlign: YAlign;
+    };
 
     const xAlignClass = props.xAlign;
     const yAlignClass = props.yAlign;
@@ -68,7 +71,7 @@
 
 <div id="weather" class={yAlignClass}>
     <div id="container" class={xAlignClass}>
-        <p>{weather.heading}</p>
+        <p id="heading">{weather.heading}</p>
         <p id="time">Last refreshed: {weather.time}</p>
         <div class="space" />
         <div id="yapper">
@@ -85,9 +88,10 @@
     #weather {
         width: 100%;
         height: 100%;
-        font-size: 1.00rem;
+        font-size: 0.71em;
         white-space: pre-line;
         display: flex;
+        flex-direction: column;
     }
 
     #container {
@@ -95,16 +99,19 @@
     }
 
     #yapper {
-        font-size: 0.71rem;
+        font-size: 0.71em;
     }
 
     p {
         margin: 0;
-        max-width: 30em;
+    }
+
+    #heading {
+        font-size: 1.00em;
     }
 
     #time {
-        font-size: 0.50rem;
+        font-size: 0.50em;
     }
 
     .space {

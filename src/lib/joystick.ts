@@ -9,7 +9,7 @@ interface Target {
     // overall action into a stack push)
     keep?: boolean;
     // Target component id - can be just a string or a callback
-    id?: string | (() => string);
+    id?: string | (() => string | undefined);
     // Action to take after successfully navigating
     action?: () => void;
 }
@@ -54,6 +54,12 @@ class Joystick {
         this.stack = stack;
     }
 
+    // Immediately set the top of the navigation stack
+    setTop(id: string) {
+        this.stack.pop();
+        this.stack.push(id);
+    }
+
     // Register a new navigable component
     register(id: string, component: Component) {
         this.components.set(id, component);
@@ -84,6 +90,31 @@ class Joystick {
     // Push onto the navigation stack, as if a component was just entered.
     push(id: string) {
         this.stack.push(id);
+    }
+
+    // Standard id for a focusable input
+    focusId(id: string): string {
+        return id + ':focus';
+    }
+
+    // Enter target for a focusable input
+    focusEnter(focusId: string): Target {
+        return {
+            keep: true,
+            id: focusId,
+            action: () => {
+                document.getElementById(focusId)?.focus();
+            }
+        }
+    }
+
+    // Exit target for a focusable input
+    focusExit(focusId: string): Target {
+        return {
+            action: () => {
+                document.getElementById(focusId)?.blur();
+            }
+        }
     }
 
     private _go(dir: Direction): boolean {
@@ -118,7 +149,10 @@ class Joystick {
                 this.stack.push(target.id);
             }
             else {
-                this.stack.push(target.id());
+                const id = target.id();
+                if (id) {
+                    this.stack.push(id);
+                }
             }
         }
 

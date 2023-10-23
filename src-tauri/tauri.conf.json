@@ -28,7 +28,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.tauri.dev",
+      "identifier": "macropinna",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
@@ -37,7 +37,9 @@
         "providerShortName": null,
         "signingIdentity": null
       },
-      "resources": [],
+      "resources": [
+        "remote-static"
+      ],
       "shortDescription": "",
       "targets": "all",
       "windows": {
@@ -54,7 +56,7 @@
     },
     "windows": [
       {
-        "fullscreen": false,
+        "fullscreen": true,
         "height": 600,
         "resizable": true,
         "title": "Macropinna",

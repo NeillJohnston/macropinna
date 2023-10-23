@@ -19,9 +19,8 @@
         {
             id: 'settings/remotes',
             label: 'Remotes',
-            component:
-            Remotes,
-            entrance: 'remotes/list'
+            component: Remotes,
+            entrance: 'remotes/showqr'
         },
     ];
 
@@ -74,11 +73,15 @@
 >
     <div id="settings">
         <div id="primary" class="column">
-            <NavLabel id='settings' label='Settings' />
+            <div class="item">
+                <NavLabel id='settings'>Settings</NavLabel>
+            </div>
         </div>
         <div id="secondary" class="column">
             {#each menu as item, index}
-            <NavLabel id={item.id} label={item.label} />
+            <div class="item">
+                <NavLabel id={item.id}>{item.label}</NavLabel>
+            </div>
             {/each}
         </div>
         <div id="panel">
@@ -113,7 +116,7 @@
     #panel-contents {
         width: 100%;
         height: 100%;
-        border: 1px solid white;
+        border: 1px solid var(--fg);
         box-sizing: border-box;
         overflow: scroll;
         padding: 0.5rem;
@@ -121,5 +124,9 @@
 
     .column {
         padding: 0.5rem 1rem;
+    }
+
+    .item {
+        padding: 0.5rem;
     }
 </style>

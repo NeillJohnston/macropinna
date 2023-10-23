@@ -1,23 +1,18 @@
 //! Part of the state that defines capture for the visualizer.
 
 use cpal::{Stream, SupportedStreamConfig, Device, SizedSample};
-use spectrum_analyzer::FrequencySpectrum;
-use std::sync::{mpsc, Arc, Mutex};
+use std::{sync::{mpsc, Arc, Mutex}, collections::VecDeque};
+use tauri::State;
 
 use crate::config::ConfigManager;
 
 // Human-audible range (https://en.wikipedia.org/wiki/Hearing_range)
 const HEARING_RANGE: (f32, f32) = (20.0, 20_000.0);
 // Just outside the hearing range (20Hz = 31.7mel, 20kHz = 3816.9mel)
-const MEL_RANGE: (u32, u32) = (30, 3820);
-// Just provide all samples, will tweak if performance is a problem.
-const MEL_RESOLUTION: u32 = 1;
-// Note on how much compute is being used here - ~3000*4B are being written to
-// constantly, and fetched (from the frontend) at 30Hz. My guess is that the
-// bottleneck is ser/de, which happens over JSON. From experience (when I
-// accidentally spawned 10-20 callbacks on the frontend), we're a bit close to
-// the limit that starts to lag my computer, which is an issue because this
-// project is targetting machines with much worse hardware.
+const MEL_RANGE: (u32, u32) = (30, 3818);
+const MEL_RESOLUTION: u32 = 4;
+const DEFAULT_SMOOTHING: f32 = 0.5;
+const DEFAULT_BUFFER_SIZE: usize = 8192;
 
 pub struct AudioVisualizerManager {
     pub data: Arc<Mutex<Data>>,
@@ -32,14 +27,18 @@ struct AudioVisualizerHandler {
 
 enum AudioVisualizerMessage {
     SetDevice {
-        name: String,
-        is_input: bool
+        name: Option<String>
     }
 }
 
 impl AudioVisualizerManager {
     pub fn new(config: &ConfigManager) -> anyhow::Result<Self> {
-        let data = Data::new(MEL_RANGE, MEL_RESOLUTION, 0.5);
+        let data = Data::new(
+            MEL_RANGE,
+            MEL_RESOLUTION,
+            DEFAULT_SMOOTHING,
+            DEFAULT_BUFFER_SIZE
+        );
         let data = Arc::new(Mutex::new(data));
 
         let (send, recv) = mpsc::channel();
@@ -54,12 +53,12 @@ impl AudioVisualizerManager {
         });
 
         let config = config.config.read().unwrap();
-        let name = config.audio_device.name.clone();
+        let name = config.audio_device
+            .as_ref()
+            .map(|dev| dev.name.clone())
+            .clone();
 
-        send.send(AudioVisualizerMessage::SetDevice {
-            name,
-            is_input: true
-        })?;
+        send.send(AudioVisualizerMessage::SetDevice { name })?;
 
         Ok(AudioVisualizerManager { _send: send, data })
     }
@@ -87,130 +86,38 @@ pub struct Data {
     pub range: (u32, u32),
     pub resolution: u32,
     pub smoothing: f32,
-    pub data: Vec<f32>,
+    pub n_channels: usize,
+    pub sample_rate: u32,
+    pub buffer: VecDeque<f32>,
 }
 
 impl Data {
-    fn new(range: (u32, u32), resolution: u32, smoothing: f32) -> Self {
-        let len = ((range.1 - range.0) / resolution) as usize;
+    fn new(range: (u32, u32), resolution: u32, smoothing: f32, buffer_size: usize) -> Self {
         Data {
             range,
             resolution,
             smoothing,
-            data: vec![0.0; len]
+            n_channels: 0,
+            sample_rate: 0,
+            buffer: VecDeque::from(vec![0.0; buffer_size]),
         }
     }
 
-    // Incorporate new spectral data
-    fn update(&mut self, spectrum: FrequencySpectrum) {
-        let mut curr = self.range.0 + self.resolution;
-        let mut index = 0;
-        let mut accum = 0.0;
-        for (mel, val) in spectrum.to_mel_map().into_iter() {
-            // "Max index" check might not be needed since ranges are just const now
-            while mel > curr && index < self.data.len() - 1 {
-                self.data[index] =
-                    accum * self.smoothing +
-                    self.data[index] * (1.0 - self.smoothing);
+    // Add new sample data to the buffer, s.t. we never go above the buffer's
+    // original max capacity (a.k.a., no unnecessary allocations)
+    fn update(&mut self, mut samples: Vec<f32>) {
+        let len = samples.len();
+        let capacity = self.buffer.capacity();
 
-                curr += self.resolution;
-                index += 1;
-                accum = 0.0;
-            }
-
-            accum += val;
+        if len > capacity {
+            samples.drain(..(len - capacity));
         }
 
-        self.data[index] =
-            accum * self.smoothing +
-            self.data[index] * (1.0 - self.smoothing);
-    }
-}
-
-impl AudioVisualizerHandler {
-    fn run(mut self) {
-        loop {
-            match self.recv.recv().unwrap() {
-                AudioVisualizerMessage::SetDevice { name, is_input } => {
-                    self.load_device(&name, is_input).unwrap();
-                }
-            }
-        }
+        self.buffer.drain(..samples.len());
+        self.buffer.append(&mut samples.into());
     }
 
-    fn load_device(&mut self, name: &str, is_input: bool) -> anyhow::Result<()> {
-        use cpal::{traits::*, SampleFormat};
-
-        let host = cpal::default_host();
-
-        let device = host.default_output_device().unwrap();
-
-        let config = device.default_output_config()?;
-        
-        let stream = match config.sample_format() {
-            SampleFormat::F32 => self.build_stream::<f32>(device, config, is_input),
-            SampleFormat::I16 => self.build_stream::<i16>(device, config, is_input),
-            // SampleFormat::I32 => self.build_stream::<i32>(device, config),
-            _ => todo!()
-        }?;
-        stream.play()?;
-
-        self.stream = Some(stream);
-
-        Ok(())
-    }
-
-    fn build_stream<T: Into<f32> + SizedSample>(&self, device: Device, config: SupportedStreamConfig, is_input: bool) -> anyhow::Result<Stream> {
-        use cpal::traits::*;
-
-        let n_channels = config.channels() as usize;
-        let data = self.data.clone();
-
-        let stream =
-            if is_input {
-                device.build_input_stream(
-                    &config.config(),
-                    move |samples: &[T], _info: &cpal::InputCallbackInfo| {
-                        Self::processor(
-                            samples,
-                            n_channels,
-                            config.sample_rate().0,
-                            data.clone()
-                        );
-                    },
-                    move |err| {
-                        log::error!("{}", err);
-                    },
-                    None
-                )?
-            }
-            else {
-                device.build_output_stream(
-                    &config.config(),
-                    move |samples: &mut[T], _info: &cpal::OutputCallbackInfo| {
-                        Self::processor(
-                            samples,
-                            n_channels,
-                            config.sample_rate().0,
-                            data.clone()
-                        );
-                    },
-                    move |err| {
-                        log::error!("{}", err);
-                    },
-                    None
-                )?
-            };
-
-        Ok(stream)
-    }
-
-    fn processor<T: Into<f32> + SizedSample>(
-        samples: &[T],
-        n_channels: usize,
-        sample_rate: u32,
-        data: Arc<Mutex<Data>>
-    ) {
+    fn process(&mut self) -> Vec<f32> {
         use spectrum_analyzer::{
             windows::hann_window,
             scaling::divide_by_N_sqrt,
@@ -218,14 +125,17 @@ impl AudioVisualizerHandler {
             samples_fft_to_spectrum,
         };
 
+        let n_channels = self.n_channels;
+        let sample_rate = self.sample_rate;
+
         // TODO best to use a specialized library for numerical processing
         // I think channel data comes interleaved - this just takes the
         // average across channels to produce a mono result
-        let mut buf = Vec::with_capacity(samples.len() / n_channels);
-        for i in (0..samples.len()).step_by(n_channels) {
+        let mut buf = Vec::with_capacity(self.buffer.len() / n_channels);
+        for i in (0..self.buffer.len()).step_by(n_channels) {
             let mut s = 0.0;
             for j in i..(i + n_channels) {
-                s += samples[j].into();
+                s += self.buffer[j];
             }
             buf.push(s);
         }
@@ -245,7 +155,115 @@ impl AudioVisualizerHandler {
             Some(&divide_by_N_sqrt)
         ).unwrap();
 
-        let mut data = data.lock().unwrap();
-        data.update(spectrum);
+        // let mut curr = self.range.0 + self.resolution;
+        // let mut index = 0;
+        // let mut accum = 0.0;
+        // for (mel, val) in spectrum.to_mel_map().into_iter() {
+        //     // "Max index" check might not be needed since ranges are just const now
+        //     while mel > curr && index < self.data.len() - 1 {
+        //         self.data[index] = accum;
+
+        //         curr += self.resolution;
+        //         index += 1;
+        //         accum = 0.0;
+        //     }
+
+        //     accum += val;
+        // }
+
+        // self.data[index] = accum;
+
+        let mut data = vec![0.0; ((self.range.1 - self.range.0) / self.resolution) as usize];
+        for (mels, val) in spectrum.to_mel_map().into_iter() {
+            let i = (mels / self.resolution) as usize;
+            if let Some(accum) = data.get_mut(i) {
+                *accum += val;
+            }
+        }
+
+        data
     }
+}
+
+impl AudioVisualizerHandler {
+    fn run(mut self) {
+        loop {
+            match self.recv.recv().unwrap() {
+                AudioVisualizerMessage::SetDevice { name } => {
+                    self.load_device(&name).unwrap();
+                }
+            }
+        }
+    }
+
+    fn load_device(&mut self, name: &Option<String>) -> anyhow::Result<()> {
+        use cpal::{traits::*, SampleFormat};
+
+        let host = cpal::default_host();
+      
+        let device = match name {
+            Some(name) => host
+                .devices()?
+                .filter(|dev| match dev.name() {
+                    Ok(_name) => &_name == name,
+                    _ => false
+                })
+                .next()
+                .ok_or(anyhow::anyhow!("Could not find audio device {}", name))?,
+            None => host.default_output_device()
+                .ok_or(anyhow::anyhow!("Could not find default output device"))?
+        };
+
+        let config = device.default_output_config()?;
+        let stream = match config.sample_format() {
+            SampleFormat::F32 => self.build_stream::<f32>(device, config),
+            SampleFormat::I16 => self.build_stream::<i16>(device, config),
+            // SampleFormat::I32 => self.build_stream::<i32>(device, config),
+            _ => todo!()
+        }?;
+        stream.play()?;
+
+        self.stream = Some(stream);
+
+        Ok(())
+    }
+
+    fn build_stream<T: Into<f32> + SizedSample>(&self, device: Device, config: SupportedStreamConfig) -> anyhow::Result<Stream> {
+        use cpal::traits::*;
+
+        {
+            let mut _data = self.data.lock().unwrap();
+            _data.n_channels = config.channels() as usize;
+            _data.sample_rate = config.sample_rate().0;
+        }
+        let data = self.data.clone();
+
+        let stream = device.build_input_stream(
+            &config.config(),
+            move |samples: &[T], _info: &cpal::InputCallbackInfo| {
+                let samples = samples
+                    .into_iter()
+                    .map(|x| <T as Into<f32>>::into(*x))
+                    .collect();
+                data.lock().unwrap().update(samples);
+            },
+            move |err| {
+                log::error!("{}", err);
+            },
+            None
+        )?;
+
+        Ok(stream)
+    }
+}
+
+#[derive(serde::Serialize)]
+pub struct AudioSpectrumResponse {
+    pub data: Vec<f32>
+}
+
+#[tauri::command]
+pub fn get_audio_spectrum(audio_visualizer: State<'_, AudioVisualizerManager>) -> AudioSpectrumResponse {
+    let data = audio_visualizer.data.lock().unwrap().process();
+    AudioSpectrumResponse { data }
 }
