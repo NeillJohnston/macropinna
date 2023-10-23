@@ -200,7 +200,7 @@ impl AudioVisualizerHandler {
         use cpal::{traits::*, SampleFormat};
 
         let host = cpal::default_host();
-
+      
         let device = match name {
             Some(name) => host
                 .devices()?
