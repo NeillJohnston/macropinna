@@ -14,7 +14,7 @@
     export let goDown: () => void;
 
     // Enable/disable visual grid
-    const grid = true;
+    const grid = false;
 
     let index = 0;
     $: screens = $config.home.screens;

@@ -31,6 +31,7 @@ impl ConfigManager {
         // TODO definitely redundant if this is only ever going to be hardcoded.
         // Might be nice to let users change this based on environment vars, but
         // I'm not sure if that's a common usecase
+        let base_path = PROJECT_DIRS.config_dir().into();
         let path = PROJECT_DIRS.config_dir().join("config.json");
         log::info!("Config path: {}", path.display());
 
@@ -47,7 +48,7 @@ impl ConfigManager {
             };
         let config = Arc::new(RwLock::new(config));
 
-        let watcher = Self::make_watcher(config.clone(), app_handle, path.clone());
+        let watcher = Self::make_watcher(config.clone(), app_handle, base_path, path.clone());
 
         let config_manager = ConfigManager {
             config,
@@ -58,16 +59,21 @@ impl ConfigManager {
         config_manager
     }
 
-    fn make_watcher(config_rw: Arc<RwLock<Config>>, app_handle: GlobalAppHandle, path: PathBuf) -> RecommendedWatcher {
+    fn make_watcher(
+        config_rw: Arc<RwLock<Config>>,
+        app_handle: GlobalAppHandle,
+        base_path: PathBuf,
+        path: PathBuf
+    ) -> RecommendedWatcher {
         use notify::{Event, RecursiveMode, Result, Watcher};
 
-        let _path = path.clone();
         let mut watcher = notify::recommended_watcher(
             move |res: Result<Event>| {
-                log::info!("Watcher event: {:?}", res);
                 if let Ok(event) = res {
+                    // TODO only trigger on changes to actual file (path)
                     if event.kind.is_modify() {
-                        if let Some(config) = ConfigManager::load_from_path(&_path) {
+                        if let Some(config) = ConfigManager::load_from_path(&path) {
+                            log::info!("Detected change in config");
                             *config_rw.write().unwrap() = config.clone();
 
                             app_handle.emit_all(ConfigEvent::channel(), ConfigEvent::Set { config });
@@ -77,7 +83,12 @@ impl ConfigManager {
             }
         ).unwrap();
 
-        watcher.watch(&path, RecursiveMode::NonRecursive).unwrap();
+        // When watching a single file, the inotify watcher deletes itself when
+        // the original file is deleted - some editors handle file modifications
+        // by deleting the original and creating a new file with the same name.
+        // Not sure what the best way to handle that is, but watching something
+        // that doesn't get deleted (like the directory) is better
+        watcher.watch(&base_path, RecursiveMode::Recursive).unwrap();
 
         watcher
     }
@@ -85,11 +96,6 @@ impl ConfigManager {
     pub fn save(&self) {
         Self::save_to_path(&self.path, &self.config.read().unwrap());
     }
-    
-    // pub fn load(&self) {
-    //     let config = Self::_load(&self.path);
-    //     *self.config.write().unwrap() = config;
-    // }
 
     fn save_to_path<P: AsRef<Path>>(path: P, config: &Config) {
         use serde_json::ser::Serializer;

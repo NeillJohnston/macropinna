@@ -71,7 +71,7 @@
         width: auto;
         height: 100%;
         aspect-ratio: 1/1;
-        padding: 6rem;
+        padding: 4rem;
         box-sizing: border-box;
     }
 

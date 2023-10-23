@@ -20,7 +20,7 @@
 
     const portionX = (n: number) => 100.0 * n / GRID_X;
     const portionY = (n: number) => 100.0 * n / GRID_Y;
-    const style = `
+    $: style = `
     left: ${portionX(coords.x)}%;
     top: ${portionY(coords.y)}%;
     width: ${portionX(coords.w)}%;

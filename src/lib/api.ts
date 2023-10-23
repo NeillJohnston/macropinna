@@ -60,10 +60,8 @@ export const config = writable<Config>({
 export const listenConfig = async () => {
     const init = await invoke('get_config') as Config;
     config.set(init);
-    console.log(init);
 
     return listen('config', (event: Event<ConfigEvent>) => {
-        console.log(event.payload.Set.config);
         config.set(event.payload.Set.config);
     });
 }

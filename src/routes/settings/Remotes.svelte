@@ -14,9 +14,11 @@
     let ip: string | undefined = undefined;
     let device: AccessInfo | undefined;
 
-    $: showRemotesModal = $nav.startsWith('remotes/modal');
+    $: showRemotesModal = !!device && $nav.startsWith('remotes/modal');
     $: showQrModal = $nav === 'remotes/qr';
 
+    // Build (or rebuild) all of the nav components - each list element gets its
+    // own component
     const buildNav = () => {
         const end = (list: any[]): number => Math.max(list.length - 1, 0);
 
@@ -53,7 +55,7 @@
                             device = _device;
                         }
                     },
-                    up: { id: prevId},
+                    up: { id: prevId },
                     down: { id: nextId },
                 });
             }
