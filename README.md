@@ -1,18 +1,12 @@
 # Macropinna
 
-A launcher app for home media servers.
+An all-in-one home screen, launcher, and remote controller for your home media server.
 
-Largely inspired by phone screens and the Android theming community. I'm making this because I wanted something nice and minimal to put on my projector for some ambience while I worked.
+Featuring:
 
-Features:
-- [ ] Customizable home screens, including:
-    - [X] Clock
-    - [X] Weather (via OpenWeatherMap)
-    - [X] Audio visualizer
-    - [ ] Media player (via MPRIS2)
-- [ ] Customizable launcher apps
-- [ ] Remote controllable from a phone (over IP, no apps needed)
-- [ ] Keystone correction (via `xrandr`)
+- Customizable pages with widgets like clocks, weather info, media players, and an audio visualizer
+- An IP-enabled remote control from your phone
+- Customizable launchers to run any app on your machine
 
 ## Installation
 
@@ -80,4 +74,4 @@ $ node -v
 v18.12.1
 ```
 
-I also haven't gone out of my way to use any new features of any of the software that Macropinna depends on (which is why I'm not going to say _you need these exact versions_), but I can't say the same for its dependencies. So while it may build with older versions of all of the above, any "weird" build errors may be the result of incompatible versions.
+I also haven't gone out of my way to use any new features of any of the software that Macropinna depends on (which is why I'm not going to say _you need these exact versions_), but I can't say the same for its dependencies. So while it may build with older versions of all of the above, any "weird" build errors may be the result of incompatible versions. These will be locked down in the future.
