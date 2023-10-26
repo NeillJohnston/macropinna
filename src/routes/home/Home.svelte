@@ -10,7 +10,6 @@
 	import Screen from '../Screen.svelte';
 	import Widget from "./Widget.svelte";
 
-
     export let goUp: () => void;
     export let goDown: () => void;
 

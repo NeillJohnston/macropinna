@@ -197,10 +197,10 @@
 
 	 /* X/Y alignment classes */
 	.left   { text-align: left; }
-  .center { text-align: center; }
-  .right  { text-align: right; }
+	.center { text-align: center; }
+	.right  { text-align: right; }
 
-  .top    { align-items: flex-start; }
-  .middle { align-items: center; }
-  .bottom { align-items: flex-end; }
+	.top    { align-items: flex-start; }
+	.middle { align-items: center; }
+	.bottom { align-items: flex-end; }
 </style>
