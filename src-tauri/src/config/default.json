@@ -62,13 +62,13 @@
             {
               "name": "pomodoro",
               "coords": {
-                "h": 2,
+                "h": 4,
                 "w": 3,
                 "x": 3,
                 "y": 3
               },
               "props": {
-                "xAlign": "left"
+                "xAlign": "center"
               }
             },
             {

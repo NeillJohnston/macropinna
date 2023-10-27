@@ -1,11 +1,6 @@
 <script lang="ts">
 	// Todo: Unhardcode times and pull from config.json so user can customize length of Pomodoro modes in settings
 	import Icon from '@iconify/svelte';
-	import type { XAlign } from '$lib/layout';
-
-	export let props: {
-		xAlign: XAlign;
-	};
 
 	let timerType = 'pomodoro';
 	let time = 1500; // Default value for seconds, renders with Pomodoro timer type first
@@ -83,11 +78,10 @@
 	};
 
 	// TODO: Auto advance pomodoro (WIP) - want to auto advance to short break, back to pomodoro, and then long break after a user-defined number of cycles has been completed
-	const xAlignClass = props.xAlign;
 </script>
 
-<div id="pomodoro" class={xAlignClass}>
-	<p><strong>Focus Module</strong></p>
+<div id="pomodoro">
+	<p id="title"><strong>Focus Module:</strong></p>
 	<div id="mode_buttons">
 		<button
 			on:click={() => setTimerType('pomodoro')}
@@ -128,54 +122,54 @@
 </div>
 
 <style>
-	p {
-		text-align: center;
-		margin: 0;
-		font-size: 1.41rem;
-	}
-
 	button {
 		cursor: pointer;
-		margin: 0 0.1rem;
 		border-radius: 5% 5%;
 		border: 1px solid #fff;
 	}
 
+	#title {
+		margin: 0;
+		font-size: 1.00rem;
+	}
+
 	#pomodoro {
-		height: 100%;
-		width: 100%;
+		font-size: 0; /* Overriding the default font-size to prevent spacing issues */
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: space-evenly;
+		justify-content: center;
 	}
 
 	#mode_buttons {
-		margin: 0.25rem 0 0.7rem;
+		font-size: 0.71rem;
+		margin-top: 0.3rem;
 	}
 
 	#mode_buttons > button {
 		padding: 0.4rem;
 		border-radius: 7% 5%;
 		background-color: transparent;
-		border: 1px solid #fff;
+		border: 2px solid #fff;
 		color: #fff;
 	}
 
 	#timer {
 		font-size: 2rem;
+		margin-top: 0.4rem;
 	}
 
 	#timer_controls {
+		margin-top: 0.5rem;
 		width: 80%;
 		display: flex;
-		justify-content: space-between;
 	}
 
 	#timer_controls > #start_pause {
-		flex: 5;
+		margin-right: 0.20rem;
+		flex: 4;
 		border-radius: 2%;
-		padding: 0.5rem;
+		padding: 0.35rem;
 		font-size: 0.71rem;
 		border: none;
 	}
@@ -194,13 +188,4 @@
 	button:hover {
 		background-color: #d3d3d3;
 	}
-
-	 /* X/Y alignment classes */
-	.left   { text-align: left; }
-	.center { text-align: center; }
-	.right  { text-align: right; }
-
-	.top    { align-items: flex-start; }
-	.middle { align-items: center; }
-	.bottom { align-items: flex-end; }
 </style>
