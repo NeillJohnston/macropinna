@@ -19,7 +19,7 @@
 </script>
 
 <div id="todo">
-    <p id="title"><strong>Today's tasks:</strong></p>
+    <p id="title"><strong>Today's Tasks:</strong></p>
     <ul>
         {#each list as item}
         <p>
