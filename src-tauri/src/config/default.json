@@ -60,6 +60,18 @@
         {
           "widgets": [
             {
+              "name": "pomodoro",
+              "coords": {
+                "h": 4,
+                "w": 3,
+                "x": 3,
+                "y": 3
+              },
+              "props": {
+                "xAlign": "center"
+              }
+            },
+            {
               "name": "todo",
               "coords": {
                 "h": 9,

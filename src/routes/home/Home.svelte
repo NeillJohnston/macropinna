@@ -6,10 +6,9 @@
 <script lang="ts">
 	import { config } from "$lib/api";
 	import { onMount } from "svelte";
-  import { Direction, joystick } from '$lib/joystick';
+    import { Direction, joystick } from '$lib/joystick';
 	import Screen from '../Screen.svelte';
 	import Widget from "./Widget.svelte";
-
 
     export let goUp: () => void;
     export let goDown: () => void;

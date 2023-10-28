@@ -5,6 +5,7 @@
 	import Weather from "./widgets/Weather.svelte";
 	import AudioVisualizer from "./widgets/AudioVisualizer.svelte";
 	import Player from "./widgets/Player.svelte";
+    import Pomodoro from "./widgets/Pomodoro.svelte";
 
     export let name: string;
     export let coords: { x: number, y: number, w: number, h: number };
@@ -15,6 +16,7 @@
         weather: Weather,
         audioVisualizer: AudioVisualizer,
         player: Player,
+        pomodoro: Pomodoro,
         todo: Todo,
     }[name];
 
@@ -37,5 +39,6 @@
     .widget {
         position: absolute;
         box-sizing: border-box;
+        border: 1px solid yellow;
     }
 </style>

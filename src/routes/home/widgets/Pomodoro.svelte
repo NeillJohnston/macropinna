@@ -3,7 +3,6 @@
 	import Icon from '@iconify/svelte';
 
 	let timerType = 'pomodoro';
-	let pomodoroCount = 0;
 	let time = 1500; // Default value for seconds, renders with Pomodoro timer type first
 	let timer: number;
 
@@ -17,14 +16,18 @@
 	// Timer related variables and functions
 	let timeRemaining = time;
 	let running = false;
+	let paused = false;
+	let expired = false;
 
 	const start = () => {
 		running = true;
+		paused = false;
 		if (timeRemaining <= 0) return;
 
 		timer = setInterval(() => {
 			if (timeRemaining <= 0) {
 				clearInterval(timer);
+				expired = true;
 			} else {
 				timeRemaining--;
 			}
@@ -35,12 +38,15 @@
 		if (!running) return;
 		clearInterval(timer);
 		running = false;
+		paused = true;
 	};
 
 	const reset = () => {
 		clearInterval(timer);
 		timeRemaining = time;
 		running = false;
+		paused = false;
+		expired = false;
 	};
 
 	// Borrowed function to format time to HH:MM:SS
@@ -59,17 +65,11 @@
 
 	// Pomodoro specific functions
 	const setTimerType = (newType: string) => {
-		// Pause timer on switch
-		if (running) reset();
+		// Reset timer on switch
+		reset();
 
-		// Set new timer type based on UI
-		if (newType === 'pomodoro') {
-			timerType = 'pomodoro';
-		} else if (newType === 'short break') {
-			timerType = 'short break';
-		} else {
-			timerType = 'long break';
-		}
+		// Set new timer type
+		timerType = newType;
 
 		// Store new time based on timer type
 		const newTime = timerTypes.get(timerType);
@@ -77,32 +77,11 @@
 		timeRemaining = time;
 	};
 
-	// Auto advance pomodoro (WIP) - want to auto advance to short break, back to pomodoro, and then long break after a user-defined number of cycles has been completed
-	// const advancePomodoro = () => {
-	// 	// Advance by one Pomodoro, reset after 4
-	// 	if (pomodoroCount < 4) {
-	// 		if (pomodoroType === 'pomodoro') {
-	// 			pomodoroType = 'short break';
-	// 		} else if (pomodoroType === 'short break') {
-	// 			pomodoroCount++;
-	// 			pomodoroType = 'pomodoro';
-	// 		}
-	// 	} else {
-	// 		if (pomodoroType === 'long break') {
-	// 			pomodoroCount = 0;
-	// 			pomodoroType = 'pomodoro';
-	// 		} else {
-	// 			pomodoroType = 'long break';
-	// 		}
-	// 	}
-
-	// 	time = pomodoroTypes.get(pomodoroType) ?? 1500;
-	// 	timeRemaining = time;
-	// };
+	// TODO: Auto advance pomodoro (WIP) - want to auto advance to short break, back to pomodoro, and then long break after a user-defined number of cycles has been completed
 </script>
 
-<div id="pomodoro" class="container">
-	<p><strong>Focus Module</strong></p>
+<div id="pomodoro">
+	<p id="title"><strong>Focus Module:</strong></p>
 	<div id="mode_buttons">
 		<button
 			on:click={() => setTimerType('pomodoro')}
@@ -129,8 +108,12 @@
 	<span id="timer">{formatTime(timeRemaining)}</span>
 	<br />
 	<div id="timer_controls">
-		{#if !running}
+		{#if !running && !paused}
 			<button id="start_pause" on:click={start}>Start</button>
+		{:else if paused}
+			<button id="start_pause" on:click={start}>Resume</button>
+		{:else if expired}
+			<button id="start_pause" on:click={reset}>Reset</button>
 		{:else}
 			<button id="start_pause" on:click={pause}>Pause</button>
 		{/if}
@@ -139,54 +122,54 @@
 </div>
 
 <style>
-	p {
-		text-align: center;
-		margin: 0;
-		font-size: 1.41rem;
-	}
-
 	button {
 		cursor: pointer;
-		margin: 0 0.1rem;
 		border-radius: 5% 5%;
 		border: 1px solid #fff;
 	}
 
+	#title {
+		margin: 0;
+		font-size: 1.00rem;
+	}
+
 	#pomodoro {
-		height: 100%;
-		width: 100%;
+		font-size: 0; /* Overriding the default font-size to prevent spacing issues */
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: space-evenly;
+		justify-content: center;
 	}
 
 	#mode_buttons {
-		margin: 0.25rem 0 0.7rem;
+		font-size: 0.71rem;
+		margin-top: 0.3rem;
 	}
 
 	#mode_buttons > button {
 		padding: 0.4rem;
 		border-radius: 7% 5%;
 		background-color: transparent;
-		border: 1px solid #fff;
+		border: 2px solid #fff;
 		color: #fff;
 	}
 
 	#timer {
 		font-size: 2rem;
+		margin-top: 0.4rem;
 	}
 
 	#timer_controls {
+		margin-top: 0.5rem;
 		width: 80%;
 		display: flex;
-		justify-content: space-between;
 	}
 
 	#timer_controls > #start_pause {
-		flex: 5;
+		margin-right: 0.20rem;
+		flex: 4;
 		border-radius: 2%;
-		padding: 0.5rem;
+		padding: 0.35rem;
 		font-size: 0.71rem;
 		border: none;
 	}
