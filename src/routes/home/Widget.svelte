@@ -9,9 +9,12 @@
 
     export let name: string;
     export let coords: { x: number, y: number, w: number, h: number };
+    // Props are arbitrary data that get passed down to the rendered widget -
+    // every widget should have an export to capture this
     export let props: any;
 
-    const widget = {
+    // Forcing widget to be an `any` to prevent typechecking errors on props
+    const widget: any = {
         clock: Clock,
         weather: Weather,
         audioVisualizer: AudioVisualizer,
