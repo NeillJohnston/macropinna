@@ -3,19 +3,19 @@
 	import { onMount } from "svelte";
 	import Screen from "../Screen.svelte";
 	import NavLabel from "./NavLabel.svelte";
-    import General from "./General.svelte";
+    // import General from "./General.svelte";
 	import Remotes from "./Remotes.svelte";
 
     export let goDown: () => void;
 
     let menuIndex = 0;
     const menu = [
-        {
-            id: 'settings/general',
-            label: 'General',
-            component: General,
-            entrance: 'general/list'
-        },
+        // {
+        //     id: 'settings/general',
+        //     label: 'General',
+        //     component: General,
+        //     entrance: 'general/list'
+        // },
         {
             id: 'settings/remotes',
             label: 'Remotes',
