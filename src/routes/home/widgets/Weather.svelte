@@ -5,11 +5,14 @@
     import { onMount } from "svelte";
     import Qty from 'js-quantities';
     import strftime from 'strftime';
+	import { joystick, nav } from "$lib/joystick";
 
     export let props: {
         xAlign: XAlign;
         yAlign: YAlign;
     };
+    export let id: string;
+    export const entry = id + '/yapper';
 
     const xAlignClass = props.xAlign;
     const yAlignClass = props.yAlign;
@@ -29,7 +32,21 @@
         subheadings: ['It might be sunny. It might be rainy. Who knows?']
     };
 
+    let yapper: any;
+
     onMount(() => {
+        joystick.register(entry, {
+            left: {
+                keep: true,
+                action: yapper.prev
+            },
+            right: {
+                keep: true,
+                action: yapper.next
+            },
+            exit: {}
+        });
+
         const refreshWeather = async () => {
             const res: any = await invoke('get_weather');
             if (!!res) {
@@ -76,9 +93,11 @@
         <div class="space" />
         <div id="yapper">
             <Yapper
+                bind:this={yapper}
                 blurbs={weather.subheadings}
                 cpm={800}
                 readDelayMs={10_000}
+                focused={$nav === entry}
             />
         </div>
     </div>
