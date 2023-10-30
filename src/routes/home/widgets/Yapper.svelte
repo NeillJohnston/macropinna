@@ -79,11 +79,11 @@
     }
     
     .light {
-        color: #666;
+        opacity: 0.6;
     }
 
     .focused {
-        color: var(--fg);
+        opacity: 1.0;
         text-decoration: underline;
     }
 
