@@ -1,5 +1,6 @@
 <script lang="ts">
     import { invoke } from '@tauri-apps/api';
+    import { convertFileSrc } from '@tauri-apps/api/tauri';
 	import { onMount } from 'svelte';
 
     export let props: any;
@@ -8,6 +9,19 @@
     let title: string | undefined = undefined;
     let album: string | undefined = undefined;
     let url: string | undefined = undefined;
+
+    const getUrl = (url: string) => {
+        // Local files need to be loaded with the asset protocol
+        // TODO assumes that a URL from the media player always comes prefixed
+        // with a protocol (file://, http://, etc.) - might not be the case with
+        // every player
+        if (url.startsWith('file://')) {
+            return convertFileSrc(url.slice(7));
+        }
+        else {
+            return url;
+        }
+    }
 
     onMount(() => {
         return setInterval(async () => {
@@ -25,7 +39,7 @@
 
 <div id="player">
     {#if url}
-    <img id="art" src={url} alt="Album art" />
+    <img id="art" src={getUrl(url)} alt="Album art" />
     {/if}
     <div id="info">
         <p id="title">{title}</p>
@@ -62,7 +76,7 @@
     }
 
     #art {
-        object-fit: contain;
+        object-fit: cover;
         width: auto;
         height: 100%;
         aspect-ratio: 1/1;
