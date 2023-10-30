@@ -42,6 +42,6 @@
     .widget {
         position: absolute;
         box-sizing: border-box;
-        border: 1px solid yellow;
+        /* border: 1px solid yellow; */
     }
 </style>

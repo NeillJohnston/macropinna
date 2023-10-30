@@ -3,6 +3,7 @@
     export let selected: boolean;
     export let size: string;
     export let margin: string;
+    export let url: string | undefined;
 </script>
 
 <div
@@ -13,7 +14,11 @@
     style:margin-right={margin}
 >
     <div id="inner">
+        {#if url}
+        <img id="cover" src={url} alt="Launcher cover" />
+        {:else}
         {name}
+        {/if}
     </div>
 </div>
 
@@ -43,6 +48,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        text-align: center;
         border: 1px solid var(--fg);
+    }
+
+    #cover {
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
     }
 </style>
