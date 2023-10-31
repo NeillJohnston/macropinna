@@ -1,6 +1,6 @@
 <script lang="ts">
 	import KeyboardInput from "../KeyboardInput.svelte";
-	import NavLabel from "./NavLabel.svelte";
+	import NavLabel from "../ui/NavLabel.svelte";
 
     export let code: string;
     export let onMatch: () => void;

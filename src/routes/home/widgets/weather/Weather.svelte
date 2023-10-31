@@ -6,6 +6,9 @@
     import Qty from 'js-quantities';
     import strftime from 'strftime';
 	import { joystick, nav } from "$lib/joystick";
+	import Modal from "../../../ui/Modal.svelte";
+	import Icon from "@iconify/svelte";
+	import NavText from "../../../ui/NavText.svelte";
 
     export let props: {
         xAlign: XAlign;
@@ -13,6 +16,12 @@
     };
     export let id: string;
     export const entry = id + '/yapper';
+
+    const editButtonId = id + '/editButton';
+    // const editModalId = id + '/editModal';
+
+    $: showEditButton = $nav.startsWith(id + '/');
+    // $: showEditModal = $nav.startsWith(editModalId);
 
     const xAlignClass = props.xAlign;
     const yAlignClass = props.yAlign;
@@ -29,7 +38,7 @@
     let weather = {
         heading: 'Fetching weather...',
         time: 'never',
-        subheadings: ['It might be sunny. It might be rainy. Who knows?']
+        subheadings: ['...']
     };
 
     let yapper: any;
@@ -44,6 +53,16 @@
                 keep: true,
                 action: yapper.next
             },
+            up: { id: editButtonId },
+            exit: {}
+        });
+
+        joystick.register(editButtonId, {
+            enter: {
+                keep: true,
+                // id: editModalId
+            },
+            down: { id: entry },
             exit: {}
         });
 
@@ -102,6 +121,14 @@
         </div>
     </div>
 </div>
+{#if showEditButton}
+<div id="edit-button">
+    <NavText id={editButtonId}><Icon icon='carbon:edit' inline /></NavText>
+</div>
+{/if}
+<!-- {#if showEditModal}
+<Modal>hello</Modal>
+{/if} -->
 
 <style>
     #weather {
@@ -136,6 +163,13 @@
 
     .space {
         height: 0.5rem;
+    }
+
+    #edit-button {
+        position: absolute;
+        top: 0.25rem;
+        right: 0.25rem;
+        font-size: 0.71rem;
     }
 
     /* X/Y alignment classes */

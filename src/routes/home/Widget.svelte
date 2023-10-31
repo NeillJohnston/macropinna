@@ -3,7 +3,7 @@
     import { joystick, nav } from '$lib/joystick';
     import Clock from "./widgets/Clock.svelte";
 	import Todo from "./widgets/Todo.svelte";
-	import Weather from "./widgets/Weather.svelte";
+	import Weather from "./widgets/weather/Weather.svelte";
 	import AudioVisualizer from "./widgets/AudioVisualizer.svelte";
 	import Player from "./widgets/Player.svelte";
     import Pomodoro from "./widgets/Pomodoro.svelte";
@@ -15,17 +15,18 @@
     Typing across Svelte components is an unknown art to me, so right now
     widgets can only follow a really informal contract about how to behave.
 
-    Widgets *should* have the following exports:
+    Widgets *can* have the following exports:
     - An `export let props: ...;`
     - An `export let id: string;`
     - An `export const entry = id + ...`.
     
     Props allow widgets to receive data from config - if a widget doesn't need
-    to receive anything from config, this can be safely omitted. Id and entry
-    enable navigation for a widget - in particular, when a widget is mounted,
-    navigating into the widget will push whatever is defined in entry to the
-    nav stack. If a widget does not wish to enable navigation, then this should
-    be omitted.
+    to receive anything from config, this can be safely omitted.
+    
+    Id and entry enable navigation for a widget - in particular, when a widget
+    is mounted, navigating into the widget will push whatever is defined in
+    entry to the nav stack. If a widget does not wish to enable navigation, then
+    this should be omitted.
 
     It's best for entry to include id as a prefix, so that multiple instances of
     the same widget have separate navigation.

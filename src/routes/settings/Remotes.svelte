@@ -2,9 +2,9 @@
 	import { Direction, joystick, nav } from "$lib/joystick";
 	import { onMount } from "svelte";
     import { listen } from '@tauri-apps/api/event';
-	import NavBox from "./NavBox.svelte";
+	import NavBox from "../ui/NavBox.svelte";
 	import { getPendingDevices, type AccessInfo, type RemoteServerEvent, getRemoteServerIp, type ActiveInfo, getActiveDevices } from "$lib/api";
-	import NavLabel from "./NavLabel.svelte";
+	import NavLabel from "../ui/NavLabel.svelte";
 	import RemotesModal from "./RemotesModal.svelte";
 	import QrModal from "./QrModal.svelte";
 
