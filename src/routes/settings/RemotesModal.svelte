@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { joystick, nav, Direction } from "$lib/joystick";
 	import { onMount } from "svelte";
-	import NavBox from "./NavBox.svelte";
+	import NavBox from "../ui/NavBox.svelte";
 	import { invoke } from "@tauri-apps/api";
 	import Icon from "@iconify/svelte";
 	import type { AccessInfo } from "$lib/api";

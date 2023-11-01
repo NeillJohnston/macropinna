@@ -6,6 +6,20 @@
     export let cpm = 1200;
     export let readDelayMs = 3000;
     export let waitDelayMs = 250;
+    export let focused = false;
+
+    export const prev = () => {
+        t = 0;
+        state = 'typing';
+        textIndex = 0;
+        blurbIndex = (blurbIndex - 1 + blurbs.length) % blurbs.length;
+    };
+    export const next = () => {
+        t = 0;
+        state = 'typing';
+        textIndex = 0;
+        blurbIndex = (blurbIndex + 1) % blurbs.length;
+    };
 
     const charDelayMs = 60_000/cpm;
     const tReadDelay = Math.round(readDelayMs/charDelayMs);
@@ -54,7 +68,7 @@
 </script>
 
 <p>
-    <span class="light">[{blurbIndex+1}/{blurbs.length}]</span>
+    <span class="light" class:focused={focused}>[{blurbIndex+1}/{blurbs.length}]</span>
     {shown}<span class={cursorOff ? 'hidden' : 'light'}>|</span><span class="hidden">{hidden}</span>
 </p>
 
@@ -65,7 +79,12 @@
     }
     
     .light {
-        color: #666;
+        opacity: 0.6;
+    }
+
+    .focused {
+        opacity: 1.0;
+        text-decoration: underline;
     }
 
     .hidden {

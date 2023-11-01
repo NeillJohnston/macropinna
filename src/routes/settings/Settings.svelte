@@ -2,7 +2,7 @@
 	import { Direction, joystick } from "$lib/joystick";
 	import { onMount } from "svelte";
 	import Screen from "../Screen.svelte";
-	import NavLabel from "./NavLabel.svelte";
+	import NavLabel from "../ui/NavLabel.svelte";
     // import General from "./General.svelte";
 	import Remotes from "./Remotes.svelte";
 

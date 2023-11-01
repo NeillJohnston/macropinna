@@ -40,8 +40,16 @@
                 keep: true,
                 action: () => { index = (index + 1) % screens.length; }
             },
+            enter: {
+                keep: true,
+                id: () => screens[index].widgets.length > 0 ? `home/${index}/0` : undefined
+            }
         });
     });
+
+    const widgetId = (screenIndex: number, widgetIndex: number) => (
+        `home/${screenIndex}/${widgetIndex}`
+    );
 </script>
 
 <Screen
@@ -65,8 +73,15 @@
                 {/each}
             </div>
             {/if}
-            {#each screen.widgets as { name, coords, props }}
-            <Widget name={name} coords={coords} props={props} />
+            {#each screen.widgets as { name, coords, props }, widgetIndex}
+            <Widget
+                name={name}
+                coords={coords}
+                props={props}
+                id={widgetId(screenIndex, widgetIndex)}
+                leftId={widgetId(screenIndex, (widgetIndex - 1 + screen.widgets.length) % screen.widgets.length)}
+                rightId={widgetId(screenIndex, (widgetIndex + 1) % screen.widgets.length)}
+            />
             {/each}
         </div>
         {/each}
