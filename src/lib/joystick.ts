@@ -14,7 +14,7 @@ interface Target {
     action?: () => void;
 }
 
-interface Component {
+export interface Component {
     up?: Target;
     down?: Target;
     left?: Target;
