@@ -59,7 +59,7 @@
         justify-content: space-between;
         align-items: center;
         flex-direction: row;
-        padding: var(--sm);
+        padding: var(--xs);
     }
 
     #display {

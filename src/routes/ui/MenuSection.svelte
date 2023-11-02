@@ -1,22 +1,22 @@
 <script lang="ts">
-    export let label: string;
+    export let label: string | undefined = undefined;
 </script>
 
-<div id="menu-section">
-    <p id="label"><strong>{label}</strong></p>
+<div>
+    {#if label}
+    <p id="label">{label}</p>
+    {/if}
     <div id="menu">
         <slot />
     </div>
 </div>
 
 <style>
-    #menu-section {}
-
     #label {
-        font-size: 0.71rem;
+        font-size: var(--f-1);
     }
 
     #menu {
-        padding-left: var(--lg);
+        padding-left: var(--md);
     }
 </style>

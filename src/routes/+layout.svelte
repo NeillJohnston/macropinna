@@ -107,10 +107,11 @@
         --bg2: #222222;
 
         /* Margin/padding sizes */
-        --sm: 0.13rem;
-        --md: 0.25rem;
-        --lg: 0.50rem;
-        --xl: 1.00rem;
+        --xs: 0.13rem;
+        --sm: 0.25rem;
+        --md: 0.50rem;
+        --lg: 1.00rem;
+        --xl: 2.00rem;
 
         /*
         Font sizing - fixed s.t. 1rem ~= 1/24th of the screen. Relative font

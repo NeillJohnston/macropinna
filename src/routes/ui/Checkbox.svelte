@@ -45,6 +45,6 @@
     }
 
     #inner {
-        padding: var(--sm);
+        padding: var(--xs);
     }
 </style>
