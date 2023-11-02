@@ -140,7 +140,7 @@
         {#each pendingList as device, index}
         <NavBox id={`remotes/pending/${index}`}>
             <div class='item'>
-                <p><strong>{device.name}</strong></p>
+                <strong>{device.name}</strong>
             </div>
         </NavBox>
         {/each}
@@ -155,7 +155,7 @@
         {#each activeList as device, index}
         <NavBox id={`remotes/active/${index}`}>
             <div class='item'>
-                <p><strong>{device.name}</strong></p>
+                <strong>{device.name}</strong>
             </div>
         </NavBox>
         {/each}
