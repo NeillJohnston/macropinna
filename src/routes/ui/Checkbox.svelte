@@ -2,52 +2,46 @@
 	import { joystick, type Component } from "$lib/joystick";
 	import { onMount } from "svelte";
 	import NavBox from "./NavBox.svelte";
+	import Icon from "@iconify/svelte";
 
     // This UI element's nav id.
     export let id: string;
     // Partial navigation for the UI element. Note that enter will be overridden.
     export let component: Component = {};
-    // Callback for when the button is pressed.
-    export let onPress: () => void;
+    // Whether this checkbox is on or not.
+    export let on: boolean;
+    // Optional callback for when the checkbox state changes.
+    export let onChange: (on: boolean) => void = () => {};
 
-    let pressed = false;
+    $: icon = on ? 'carbon:checkbox-checked-filled' : 'carbon:checkbox';
+
     onMount(() => {
         joystick.register(id, {
             ...component,
             enter: {
                 keep: true,
                 action: () => {
-                    onPress();
-
-                    pressed = true;
-                    setTimeout(() => {
-                        pressed = false;
-                    }, 50);
+                    on = !on;
+                    onChange(on);
                 }
             }
         });
     });
 </script>
 
-<div id="button" class:pressed={pressed}>
+<div id="checkbox">
     <NavBox id={id}>
         <div id="inner">
+            <Icon icon={icon} inline />
             <slot />
         </div>
     </NavBox>
 </div>
 
 <style>
-    #button {
+    #checkbox {
         display: inline-block;
         text-align: center;
-        background-color: var(--bg2);
-        transition: background-color ease 0.2s;
-    }
-
-    #button.pressed {
-        background-color: var(--fg2);
-        transition: background-color ease 0.0s;
     }
 
     #inner {

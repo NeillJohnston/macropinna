@@ -4,6 +4,7 @@
 	import CarouselSelector from "../ui/CarouselSelector.svelte";
 	import Icon from "@iconify/svelte";
 	import Button from "../ui/Button.svelte";
+	import Checkbox from "../ui/Checkbox.svelte";
 
     // TODO remove this. It's just a testing ground for UI.
 
@@ -16,6 +17,8 @@
         'Bar but with a long name',
         'Baz'
     ]
+
+    let checkboxOn = false;
 </script>
 
 <div id="test">
@@ -28,21 +31,50 @@
         bind:index={carouselIndex}
         values={carouselValues}
     />
+    <div class="space" />
     <Button
         id='test/button'
         component={{
             up: { id: 'test/carousel' },
+            down: { id: 'test/button2' },
             exit: {}
         }}
         onPress={() => {}}
     >
         Button
     </Button>
+    <div class="space" />
+    <Button
+        id='test/button2'
+        component={{
+            up: { id: 'test/button' },
+            down: { id: 'test/checkbox' },
+            exit: {}
+        }}
+        onPress={() => {}}
+    >
+        Another Button
+    </Button>
+    <div class="space" />
+    <Checkbox
+        id='test/checkbox'
+        bind:on={checkboxOn}
+        component={{
+            up: { id: 'test/button2' },
+            exit: {}
+        }}
+    >
+        Checkbox
+    </Checkbox>
 </div>
 
 <style>
     #test {
         width: 100%;
         height: 100%;
+    }
+
+    .space {
+        height: var(--lg);
     }
 </style>

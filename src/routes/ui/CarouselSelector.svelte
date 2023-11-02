@@ -10,6 +10,8 @@
     export let component: Component = {};
     // The currently selected index.
     export let index: number;
+    // Optional callback for when the index changes.
+    export let onChange: (index: number) => void = () => {};
     // The possible values that can be displayed.
     export let values: string[];
     // Set to true if you want to provide custom rendering for the currently selected item (via this component's slot).
@@ -22,12 +24,14 @@
                 keep: true,
                 action: () => {
                     index = (index - 1 + values.length) % values.length;
+                    onChange(index);
                 }
             },
             right: {
                 keep: true,
                 action: () => {
                     index = (index + 1) % values.length;
+                    onChange(index);
                 }
             }
         });
@@ -55,6 +59,7 @@
         justify-content: space-between;
         align-items: center;
         flex-direction: row;
+        padding: var(--sm);
     }
 
     #display {
