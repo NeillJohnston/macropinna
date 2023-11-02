@@ -110,24 +110,29 @@
         --sm: 0.13rem;
         --md: 0.25rem;
         --lg: 0.50rem;
+        --xl: 1.00rem;
+
+        /*
+        Font sizing - fixed s.t. 1rem ~= 1/24th of the screen. Relative font
+        sizes (f1, f2, etc.) are then based on a power-of-2 multiple system.
+        */
+        font-size: 4.167vh;
+        --f-4: 0.25rem;
+        --f-3: 0.35rem;
+        --f-2: 0.50rem;
+        --f-1: 0.71rem;
+        --f0:  1.00rem;
+        --f1:  1.41rem;
+        --f2:  2.00rem;
+        --f3:  2.83rem;
+        --f4:  4.00rem;
+
+        /* Font families */
+        --text: 'IBM Plex Sans';
+        --code: 'IBM Plex Mono';
 
         color: var(--fg);
-        font-family: 'IBM Plex Sans';
-        /*
-        Font sizing is mostly based on rem units, which are based on this number.
-        For consistency, I'm using powers of sqrt(2) as the rem multiples, so:
-          - 0.25rem
-          - 0.35rem
-          - 0.50rem
-          - 0.71rem
-          - 1.00rem
-          - 1.41rem
-          - 2.00rem
-          - 2.83rem
-          - 4.00rem
-        Can't imagine needing anything smaller/larger than these.
-         */
-        font-size: 4.167vh;
+        font-family: var(--text);
     }
 
     #app-root {
