@@ -3,6 +3,7 @@
 	import { onMount } from "svelte";
 	import CarouselSelector from "../ui/CarouselSelector.svelte";
 	import Icon from "@iconify/svelte";
+	import Button from "../ui/Button.svelte";
 
     // TODO remove this. It's just a testing ground for UI.
 
@@ -18,21 +19,25 @@
 </script>
 
 <div id="test">
-    <div style:width='300px'>
-        <CarouselSelector
-            id='test/carousel'
-            component={{
-                exit: {}
-            }}
-            bind:index={carouselIndex}
-            values={carouselValues}
-            custom
-        >
-            <div>
-                <Icon icon='carbon:accessibility-color' inline />{carouselValues[carouselIndex]}
-            </div>
-        </CarouselSelector>
-    </div>
+    <CarouselSelector
+        id='test/carousel'
+        component={{
+            down: { id: 'test/button' },
+            exit: {}
+        }}
+        bind:index={carouselIndex}
+        values={carouselValues}
+    />
+    <Button
+        id='test/button'
+        component={{
+            up: { id: 'test/carousel' },
+            exit: {}
+        }}
+        onPress={() => {}}
+    >
+        Button
+    </Button>
 </div>
 
 <style>

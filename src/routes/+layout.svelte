@@ -100,10 +100,16 @@
     }
 
     :root {
+        /* Colors */
         --fg: #ffffff;
         --fg2: #888888;
         --bg: #000000;
         --bg2: #222222;
+
+        /* Margin/padding sizes */
+        --sm: 0.13rem;
+        --md: 0.25rem;
+        --lg: 0.50rem;
 
         color: var(--fg);
         font-family: 'IBM Plex Sans';
