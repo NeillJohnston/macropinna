@@ -1,12 +1,17 @@
 <script lang="ts">
-	// Todo: Unhardcode times and pull from config.json so user can customize length of Pomodoro modes in settings
+	import { joystick } from '$lib/joystick';
 	import Icon from '@iconify/svelte';
+	import { onMount } from 'svelte';
+
+	// Nav related exports
+	export let id: string;
+	export const entry = id + '/pomodoro';
 
 	let timerType = 'pomodoro';
-	let time = 1500; // Default value for seconds, renders with Pomodoro timer type first
+	let time = 1500;
 	let timer: number;
 
-	// Map to store Pomodoro lengths in seconds, need to make this configurable in settings
+	// Map to store Pomodoro lengths in seconds, TODO: need to make this configurable in settings
 	const timerTypes = new Map<string, number>([
 		['pomodoro', 1500],
 		['short break', 300],
@@ -19,26 +24,63 @@
 	let paused = false;
 	let expired = false;
 
-	const start = () => {
-		running = true;
-		paused = false;
-		if (timeRemaining <= 0) return;
+	// Pomodoro Navigation
+	const buttonLayout = [
+		['pomodoro', 'short break', 'long break'], // [0][0, 1, 2]
+		['start', 'reset']												 // [1][0, 1]
+	];
 
-		timer = setInterval(() => {
-			if (timeRemaining <= 0) {
-				clearInterval(timer);
-				expired = true;
-			} else {
-				timeRemaining--;
-			}
-		}, 1000);
+	let currentRow = 0;
+	let currentCol = 0;
+	let currentSelectedButton: string;
+
+	export const navigate = (direction: string) => {
+		switch (direction) {
+			case 'up':
+				if (currentRow > 0) {
+					currentRow--;
+				}
+				break;
+			case 'down':
+				if (currentRow < buttonLayout.length - 1) {
+					currentRow++;
+				}
+				break;
+			case 'left':
+				if (currentCol > 0) {
+					currentCol--;
+				}
+				break;
+			case 'right':
+				if (currentCol < buttonLayout[currentRow].length - 1) {
+					currentCol++;
+				}
+				break;
+		}
+
+		currentSelectedButton = buttonLayout[currentRow][currentCol];
 	};
 
-	const pause = () => {
-		if (!running) return;
-		clearInterval(timer);
-		running = false;
-		paused = true;
+	// Pomodoro Functionality
+	const toggleTimer = () => {
+		if (running) {
+			clearInterval(timer);
+			running = false;
+			paused = true;
+		} else {
+			running = true;
+			paused = false;
+			if (timeRemaining <= 0) return;
+
+			timer = setInterval(() => {
+				if (timeRemaining <= 0) {
+					clearInterval(timer);
+					expired = true;
+				} else {
+					timeRemaining--;
+				}
+			}, 1000);
+		}
 	};
 
 	const reset = () => {
@@ -49,7 +91,6 @@
 		expired = false;
 	};
 
-	// Borrowed function to format time to HH:MM:SS
 	const formatTime = (time: number): string => {
 		const seconds = time;
 		const h = Math.floor(seconds / 3600);
@@ -63,12 +104,9 @@
 		return time < 0 && seconds ? `-${formattedTime}` : formattedTime;
 	};
 
-	// Pomodoro specific functions
 	const setTimerType = (newType: string) => {
-		// Reset timer on switch
 		reset();
 
-		// Set new timer type
 		timerType = newType;
 
 		// Store new time based on timer type
@@ -77,30 +115,51 @@
 		timeRemaining = time;
 	};
 
+	const setButtonText = (): string => {
+		if (running) {
+			return 'Pause';
+		} else if (paused) {
+			return 'Resume';
+		} else if (expired) {
+			return 'Reset';
+		} else {
+			return 'Start';
+		}
+	};
+
 	// TODO: Auto advance pomodoro (WIP) - want to auto advance to short break, back to pomodoro, and then long break after a user-defined number of cycles has been completed
+
+	onMount(() => {
+		joystick.register(entry, {
+			up: {
+				keep: true,
+				action: () => navigate('up')
+			},
+			down: {
+				keep: true,
+				action: () => navigate('down')
+			},
+			left: {
+				keep: true,
+				action: () => navigate('left')
+			},
+			right: {
+				keep: true,
+				action: () => navigate('right')
+			},
+			exit: {}
+		});
+	});
 </script>
 
 <div id="pomodoro">
 	<p id="title"><strong>Focus Module:</strong></p>
-	<div id="mode_buttons">
+	<div>
+		<button class:selected={currentSelectedButton === 'pomodoro'} class:active={timerType === 'pomodoro'}> Pomodoro </button>
+		<button class:selected={currentSelectedButton === 'short break'} class:active={timerType === 'short break'}> Short Break </button>
 		<button
-			on:click={() => setTimerType('pomodoro')}
-			class:active={timerType === 'pomodoro'}
-			disabled={timerType === 'pomodoro'}
-		>
-			Pomodoro
-		</button>
-		<button
-			on:click={() => setTimerType('short break')}
-			class:active={timerType === 'short break'}
-			disabled={timerType === 'short break'}
-		>
-			Short Break
-		</button>
-		<button
-			on:click={() => setTimerType('long break')}
+			class:selected={currentSelectedButton === 'long break'}
 			class:active={timerType === 'long break'}
-			disabled={timerType === 'long break'}
 		>
 			Long Break
 		</button>
@@ -108,16 +167,12 @@
 	<span id="timer">{formatTime(timeRemaining)}</span>
 	<br />
 	<div id="timer_controls">
-		{#if !running && !paused}
-			<button id="start_pause" on:click={start}>Start</button>
-		{:else if paused}
-			<button id="start_pause" on:click={start}>Resume</button>
-		{:else if expired}
-			<button id="start_pause" on:click={reset}>Reset</button>
-		{:else}
-			<button id="start_pause" on:click={pause}>Pause</button>
-		{/if}
-		<button id="reset" on:click={reset}><Icon icon={'lucide:timer-reset'} inline /></button>
+		<button id="start_pause" class:selected={currentSelectedButton === 'start'}
+			>{setButtonText()}</button
+		>
+		<button id="reset" class:selected={currentSelectedButton === 'reset'}
+			><Icon icon={'lucide:timer-reset'} inline /></button
+		>
 	</div>
 </div>
 
@@ -125,16 +180,16 @@
 	button {
 		cursor: pointer;
 		border-radius: 5% 5%;
-		border: 1px solid #fff;
+		border: 1px solid var(--fg);
 	}
 
 	#title {
 		margin: 0;
-		font-size: 1.00rem;
+		font-size: 1rem;
 	}
 
 	#pomodoro {
-		font-size: 0; /* Overriding the default font-size to prevent spacing issues */
+		font-size: 0;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -150,8 +205,8 @@
 		padding: 0.4rem;
 		border-radius: 7% 5%;
 		background-color: transparent;
-		border: 2px solid #fff;
-		color: #fff;
+		border: 2px solid var(--fg);
+		color: var(--fg);
 	}
 
 	#timer {
@@ -166,7 +221,7 @@
 	}
 
 	#timer_controls > #start_pause {
-		margin-right: 0.20rem;
+		margin-right: 0.2rem;
 		flex: 4;
 		border-radius: 2%;
 		padding: 0.35rem;
@@ -181,11 +236,11 @@
 
 	#mode_buttons > .active {
 		cursor: default;
-		background-color: #fff;
+		background-color: var(--fg);
 		color: black;
 	}
 
-	button:hover {
-		background-color: #d3d3d3;
+	.selected {
+		background-color: #d6caca;
 	}
 </style>
