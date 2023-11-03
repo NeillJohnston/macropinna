@@ -6,7 +6,7 @@
 <script lang="ts">
 	import { config } from "$lib/api";
 	import { onMount } from "svelte";
-    import { Direction, joystick } from '$lib/joystick';
+    import { Direction, joystick, nav } from '$lib/joystick';
 	import Screen from '../Screen.svelte';
 	import Widget from "./Widget.svelte";
 
@@ -81,6 +81,7 @@
                 id={widgetId(screenIndex, widgetIndex)}
                 leftId={widgetId(screenIndex, (widgetIndex - 1 + screen.widgets.length) % screen.widgets.length)}
                 rightId={widgetId(screenIndex, (widgetIndex + 1) % screen.widgets.length)}
+                onScreen={joystick.stack.includes('home') && screenIndex === index}
             />
             {/each}
         </div>

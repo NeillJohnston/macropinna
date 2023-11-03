@@ -9,6 +9,12 @@
     };
     export let id: string;
     export const entry = id + '/amp';
+    export const pause = () => {
+        running = false;
+    }
+    export const resume = () => {
+        running = true;
+    }
 
     $: showMenu = $nav.startsWith(id + '/');
 
@@ -21,7 +27,7 @@
 
     const data = new Array(nBars).fill(0);
     const displayData = new Array(nBars).fill(0);
-    // let running = true;
+    let running = true;
 
     // Exponential time-series smoothing
     const smooth = 0.4;
@@ -61,7 +67,7 @@
         })
 
         const interval = setInterval(async () => {
-            // if (!running) return;
+            if (!running) return;
 
             // TODO wrote this in a rush, needs clean-up
             const res: { data: number[] } = await invoke('get_audio_spectrum');
