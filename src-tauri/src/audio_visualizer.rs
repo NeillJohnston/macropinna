@@ -1,7 +1,7 @@
 //! Part of the state that defines capture for the visualizer.
 
 use cpal::{Stream, SupportedStreamConfig, Device, SizedSample};
-use std::{sync::{mpsc, Arc, Mutex}, collections::VecDeque};
+use std::{sync::{mpsc, Arc, Mutex, atomic::AtomicBool}, collections::VecDeque};
 use tauri::State;
 
 use crate::config::ConfigManager;
@@ -16,16 +16,19 @@ const DEFAULT_BUFFER_SIZE: usize = 8192;
 
 pub struct AudioVisualizerManager {
     pub data: Arc<Mutex<Data>>,
-    _send: mpsc::Sender<AudioVisualizerMessage>,
+    send: mpsc::Sender<AudioVisualizerMessage>,
 }
 
 struct AudioVisualizerHandler {
     recv: mpsc::Receiver<AudioVisualizerMessage>,
     stream: Option<Stream>,
-    data: Arc<Mutex<Data>>
+    data: Arc<Mutex<Data>>,
+    running: Arc<AtomicBool>
 }
 
 enum AudioVisualizerMessage {
+    Pause,
+    Unpause,
     SetDevice {
         name: Option<String>
     }
@@ -48,7 +51,8 @@ impl AudioVisualizerManager {
             AudioVisualizerHandler {
                 recv,
                 stream: None,
-                data: _data
+                data: _data,
+                running: Arc::new(AtomicBool::new(true))
             }.run();
         });
 
@@ -60,7 +64,7 @@ impl AudioVisualizerManager {
 
         send.send(AudioVisualizerMessage::SetDevice { name })?;
 
-        Ok(AudioVisualizerManager { _send: send, data })
+        Ok(AudioVisualizerManager { send, data })
     }
 }
 
@@ -189,6 +193,12 @@ impl AudioVisualizerHandler {
     fn run(mut self) {
         loop {
             match self.recv.recv().unwrap() {
+                AudioVisualizerMessage::Pause => {
+                    self.running.store(false, std::sync::atomic::Ordering::Relaxed);
+                },
+                AudioVisualizerMessage::Unpause => {
+                    self.running.store(true, std::sync::atomic::Ordering::Relaxed);
+                },
                 AudioVisualizerMessage::SetDevice { name } => {
                     self.load_device(&name).unwrap();
                 }
@@ -237,10 +247,13 @@ impl AudioVisualizerHandler {
             _data.sample_rate = config.sample_rate().0;
         }
         let data = self.data.clone();
+        let running = self.running.clone();
 
         let stream = device.build_input_stream(
             &config.config(),
             move |samples: &[T], _info: &cpal::InputCallbackInfo| {
+                if !running.load(std::sync::atomic::Ordering::Relaxed) { return; }
+
                 let samples = samples
                     .into_iter()
                     .map(|x| <T as Into<f32>>::into(*x))
@@ -266,4 +279,14 @@ pub struct AudioSpectrumResponse {
 pub fn get_audio_spectrum(audio_visualizer: State<'_, AudioVisualizerManager>) -> AudioSpectrumResponse {
     let data = audio_visualizer.data.lock().unwrap().process();
     AudioSpectrumResponse { data }
+}
+
+#[tauri::command]
+pub fn pause_audio_visualizer(audio_visualizer: State<'_, AudioVisualizerManager>) {
+    audio_visualizer.send.send(AudioVisualizerMessage::Pause).unwrap();
+}
+
+#[tauri::command]
+pub fn unpause_audio_visualizer(audio_visualizer: State<'_, AudioVisualizerManager>) {
+    audio_visualizer.send.send(AudioVisualizerMessage::Unpause).unwrap();
 }

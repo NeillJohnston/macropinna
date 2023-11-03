@@ -114,6 +114,8 @@ async fn main() -> anyhow::Result<()> {
             launcher::launch,
             weather::get_weather,
             audio_visualizer::get_audio_spectrum,
+            audio_visualizer::pause_audio_visualizer,
+            audio_visualizer::unpause_audio_visualizer,
             media_player::get_player_metadata,
             remote_server::get_pending_info_list,
             remote_server::get_active_info_list,
