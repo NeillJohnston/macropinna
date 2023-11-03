@@ -6,10 +6,15 @@
 	import Button from "../ui/Button.svelte";
 	import Checkbox from "../ui/Checkbox.svelte";
 	import MenuSection from "../ui/MenuSection.svelte";
+	import CardModal from "../ui/CardModal.svelte";
 
     // TODO remove this. It's just a testing ground for UI.
 
     onMount(() => {
+        joystick.register('test/modal', {
+            exit: {},
+            enter: { alias: Direction.Exit }
+        });
     });
 
     let carouselIndex = 0;
@@ -68,9 +73,9 @@
                 down: { id: 'test/checkbox' },
                 exit: {}
             }}
-            onPress={() => {}}
+            onPress={() => joystick.push('test/modal')}
         >
-            Another Button
+            Another Button (For the modal)
         </Button>
     </MenuSection>
     <div class="space" />
@@ -102,6 +107,11 @@
         </div>
     </MenuSection>
 </div>
+<CardModal idPrefix='test/modal'>
+    <div id="modal">
+        (Press any key to dismiss)
+    </div>
+</CardModal>
 
 <style>
     #test {
@@ -110,10 +120,14 @@
     }
 
     .space {
-        height: var(--lg);
+        height: var(--md);
     }
 
     .hspace {
-        width: var(--lg);
+        width: var(--md);
+    }
+
+    #modal {
+        padding: var(--lg);
     }
 </style>

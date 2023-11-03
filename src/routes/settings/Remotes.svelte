@@ -17,7 +17,6 @@
     let ip: string | undefined = undefined;
     let device: AccessInfo | undefined;
 
-    $: showRemotesModal = !!device && $nav.startsWith('remotes/modal');
     $: showQrModal = $nav === 'remotes/qr';
 
     // Build (or rebuild) all of the nav components - each list element gets its
@@ -165,9 +164,7 @@
 {#if showQrModal}
 <QrModal ip={ip} />
 {/if}
-{#if showRemotesModal && device}
 <RemotesModal device={device} />
-{/if}
 
 <style>
     #remotes {
