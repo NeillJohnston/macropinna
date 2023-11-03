@@ -6,7 +6,6 @@
     import Qty from 'js-quantities';
     import strftime from 'strftime';
 	import { joystick, nav } from "$lib/joystick";
-	import Modal from "../../../ui/Modal.svelte";
 	import Icon from "@iconify/svelte";
 	import NavText from "../../../ui/NavText.svelte";
 

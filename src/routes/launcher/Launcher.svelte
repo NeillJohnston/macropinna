@@ -5,6 +5,7 @@
 	import Screen from "../Screen.svelte";
 	import { config } from "$lib/api";
 	import { invoke } from "@tauri-apps/api";
+    import { convertFileSrc } from "@tauri-apps/api/tauri";
 
     export let goUp: () => void;
 
@@ -61,6 +62,7 @@
                 selected={index === _index}
                 size={size}
                 margin={margin}
+                url={!!launcher.image_path ? convertFileSrc(launcher.image_path) : undefined}
             />
             {/each}
         </div>

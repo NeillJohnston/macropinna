@@ -6,9 +6,17 @@
 	import Icon from "@iconify/svelte";
 	import type { AccessInfo } from "$lib/api";
 	import CodeInput from "./CodeInput.svelte";
-	import Modal from "../ui/Modal.svelte";
+	import CardModal from "../ui/CardModal.svelte";
+	import Button from "../ui/Button.svelte";
 
-    export let device: AccessInfo;
+    export let device: AccessInfo | undefined;
+    $: {
+        if (!device) {
+            // Try exiting from both components
+            joystick.goFrom('remotes/modal:code', Direction.Exit);
+            joystick.goFrom('remotes/modal:reject', Direction.Exit);
+        }
+    }
 
     const approve = (uuid: string) => {
         console.log(`Approving ${uuid}`);
@@ -28,77 +36,42 @@
             enter: joystick.focusEnter(joystick.focusId('remotes/modal:code')),
             exit: {}
         });
-
-        joystick.register('remotes/modal:reject', {
-            up: {
-                id: 'remotes/modal:code',
-            },
-            enter: {
-                action: () => device && reject(device.uuid)
-            },
-            exit: {}
-        });
-
-        return () => {
-            // Try exiting from both components
-            joystick.goFrom('remotes/modal:code', Direction.Exit);
-            joystick.goFrom('remotes/modal:reject', Direction.Exit);
-        };
-    })
+    });
 </script>
 
-<Modal>
-    <div id="modal">
-        <div id="modal-content">
-            <div id="modal-info">
-                <p>Connect <strong>{device?.name}</strong> by typing the code shown on its screen.</p>
-                <CodeInput
-                    code={device?.code ?? '?'}
-                    onMatch={() => approve(device?.uuid ?? '')}
-                />
-            </div>
-            <div class="button">
-                <NavBox id='remotes/modal:reject'>
-                    <p><Icon icon='carbon:close' inline /> Reject</p>
-                </NavBox>
-            </div>
+<CardModal idPrefix='remotes/modal:' center>
+    <div id="content">
+        <p>Connect <strong>{device?.name}</strong> by typing the code shown on its screen.</p>
+        <CodeInput
+            code={device?.code ?? '?'}
+            onMatch={() => approve(device?.uuid ?? '')}
+        />
+        <div class="space" />
+        <div>
+            <Button
+                id='remotes/modal:reject'
+                onPress={() => device && reject(device.uuid)}
+                component={{
+                    up: { id: 'remotes/modal:code' },
+                    exit: {}
+                }}
+            >
+                <Icon icon='carbon:close' inline /> Reject
+            </Button>
         </div>
     </div>
-</Modal>
+</CardModal>
 
 <style>
-    #modal {
-        width: auto;
-        height: 100%;
-        aspect-ratio: 1/1;
-        padding: 4rem;
-        box-sizing: border-box;
-    }
-
-    #modal-content {
-        width: 100%;
-        height: 100%;
-        border: 1px solid var(--fg);
-        background-color: var(--bg);
-        display: flex;
-        flex-direction: column;
-    }
-
-    #modal-info {
-        flex: 1;
+    #content {
         display: flex;
         flex-direction: column;
         justify-content: center;
         text-align: center;
+        padding: var(--md);
     }
 
-    .button {
-        margin: 0.5rem;
-    }
-    
-    .button p {
-        text-align: center;
-        font-weight: bold;
-        margin: 0.5em;
+    .space {
+        height: var(--lg);
     }
 </style>

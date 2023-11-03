@@ -7,6 +7,9 @@
 	import NavLabel from "../ui/NavLabel.svelte";
 	import RemotesModal from "./RemotesModal.svelte";
 	import QrModal from "./QrModal.svelte";
+	import MenuSection from "../ui/MenuSection.svelte";
+	import Button from "../ui/Button.svelte";
+	import Icon from "@iconify/svelte";
 
     let pendingList: AccessInfo[] = [];
     let activeList: ActiveInfo[] = [];
@@ -14,23 +17,12 @@
     let ip: string | undefined = undefined;
     let device: AccessInfo | undefined;
 
-    $: showRemotesModal = !!device && $nav.startsWith('remotes/modal');
     $: showQrModal = $nav === 'remotes/qr';
 
     // Build (or rebuild) all of the nav components - each list element gets its
     // own component
     const buildNav = () => {
         const end = (list: any[]): number => Math.max(list.length - 1, 0);
-
-        joystick.register('remotes/showqr', {
-            left: {},
-            exit: { alias: Direction.Left },
-            enter: {
-                keep: true,
-                id: 'remotes/qr'
-            },
-            down: { id: 'remotes/pending/0' },
-        });
 
         if (pendingList.length === 0) {
             joystick.register('remotes/pending/0', {
@@ -123,65 +115,66 @@
 </script>
 
 <div id="remotes">
-    <div class='item'>
-        <NavLabel id='remotes/showqr'><strong>Show QR code</strong></NavLabel>
-    </div>
-    <div class="label">Pending connections</div>
-    {#if pendingList.length === 0}
-    <div class='item'>
-        <NavLabel id='remotes/pending/0'>(No devices waiting)</NavLabel>
-    </div>
-    {:else}
-    {#each pendingList as device, index}
-    <NavBox id={`remotes/pending/${index}`}>
+    <MenuSection>
         <div class='item'>
-            <p><strong>{device.name}</strong></p>
+            <Button
+                id='remotes/showqr'
+                onPress={() => joystick.push('remotes/qr')}
+                component={{
+                    left: {},
+                    exit: { alias: Direction.Left },
+                    down: { id: 'remotes/pending/0' },
+                }}
+            >
+                <Icon icon='carbon:qr-code' inline /> <strong>Show QR code</strong>
+            </Button>
         </div>
-    </NavBox>
-    {/each}
-    {/if}
-    <div class="label">Active connections</div>
-    {#if activeList.length === 0}
-    <div class='item'>
-        <NavLabel id='remotes/active/0'>(No devices active)</NavLabel>
-    </div>
-    {:else}
-    {#each activeList as device, index}
-    <NavBox id={`remotes/active/${index}`}>
+    </MenuSection>
+    <MenuSection label='Pending connections'>
+        {#if pendingList.length === 0}
         <div class='item'>
-            <p><strong>{device.name}</strong></p>
+            <NavLabel id='remotes/pending/0'>(No devices waiting)</NavLabel>
         </div>
-    </NavBox>
-    {/each}
-    {/if}
+        {:else}
+        {#each pendingList as device, index}
+        <NavBox id={`remotes/pending/${index}`}>
+            <div class='item'>
+                <strong>{device.name}</strong>
+            </div>
+        </NavBox>
+        {/each}
+        {/if}
+    </MenuSection>
+    <MenuSection label='Active connections'>
+        {#if activeList.length === 0}
+        <div class='item'>
+            <NavLabel id='remotes/active/0'>(No devices active)</NavLabel>
+        </div>
+        {:else}
+        {#each activeList as device, index}
+        <NavBox id={`remotes/active/${index}`}>
+            <div class='item'>
+                <strong>{device.name}</strong>
+            </div>
+        </NavBox>
+        {/each}
+        {/if}
+    </MenuSection>
 </div>
 {#if showQrModal}
 <QrModal ip={ip} />
 {/if}
-{#if showRemotesModal && device}
 <RemotesModal device={device} />
-{/if}
 
 <style>
-    p {
-        margin: 0;
-    }
-
     #remotes {
         width: 100%;
         height: 100%;
         z-index: 0;
     }
 
-    .label {
-        margin-top: 1em;
-        margin-bottom: 1em;
-        font-size: 0.71rem;
-    }
-
     .item {
-        display: flex;
-        align-items: center;
-        padding: 0.5rem;
+        display: inline-block;
+        padding: var(--sm);
     }
 </style>
