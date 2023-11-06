@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { XAlign, YAlign } from "$lib/layout";
-	import Yapper from "./Yapper.svelte";
+	import Yapper from "../../../ui/Yapper.svelte";
     import { invoke } from '@tauri-apps/api';
     import { onMount } from "svelte";
     import Qty from 'js-quantities';
@@ -40,22 +40,7 @@
         subheadings: ['...']
     };
 
-    let yapper: any;
-
     onMount(() => {
-        joystick.register(entry, {
-            left: {
-                keep: true,
-                action: yapper.prev
-            },
-            right: {
-                keep: true,
-                action: yapper.next
-            },
-            up: { id: editButtonId },
-            exit: {}
-        });
-
         joystick.register(editButtonId, {
             enter: {
                 keep: true,
@@ -111,11 +96,14 @@
         <div class="space" />
         <div id="yapper">
             <Yapper
-                bind:this={yapper}
                 blurbs={weather.subheadings}
                 cpm={800}
                 readDelayMs={10_000}
-                focused={$nav === entry}
+                id={entry}
+                component={{
+                    up: { id: editButtonId },
+                    exit: {}
+                }}
             />
         </div>
     </div>
