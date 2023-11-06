@@ -27,16 +27,6 @@
         console.log(`Rejecting ${uuid}`);
         invoke('update_pending', { uuid, approve: false });
     }
-
-    onMount(() => {
-        joystick.register('remotes/modal:code', {
-            down: {
-                id: 'remotes/modal:reject',
-            },
-            enter: joystick.focusEnter(joystick.focusId('remotes/modal:code')),
-            exit: {}
-        });
-    });
 </script>
 
 <CardModal idPrefix='remotes/modal:' center>
