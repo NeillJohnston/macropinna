@@ -14,7 +14,8 @@
     onMount(() => {
         joystick.register(id, {
             ...component,
-            enter: joystick.focusEnter(focusId)
+            enter: joystick.focusEnter(focusId),
+            scrollTo: '#' + focusId
         });
 
         joystick.register(focusId, {
@@ -48,6 +49,10 @@
 <style>
     #keyboard-input {
         display: inline-block;
+    }
+
+    #test\/slash {
+
     }
 
     input {

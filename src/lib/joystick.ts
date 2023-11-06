@@ -21,6 +21,9 @@ export interface Component {
     right?: Target;
     enter?: Target;
     exit?: Target;
+    // An HTML id for scrolling - slashes will get automatically escaped.
+    // Technically this can be any CSS selector
+    scrollTo?: string;
 }
 
 export enum Direction {
@@ -69,7 +72,17 @@ class Joystick {
     go(dir: Direction) {
         const shouldUpdate = this._go(dir);
         if (shouldUpdate) {
-            nav.update(() => this.stack[this.stack.length - 1]);
+            const id = this.stack[this.stack.length - 1];
+            nav.update(() => id);
+
+            const scrollSelector = this.components.get(id)?.scrollTo;
+            if (scrollSelector) {
+                const escaped = scrollSelector.replace('/', '\\/').replace(':', '\\:');
+                document.querySelector(escaped)?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
         }
     }
 
