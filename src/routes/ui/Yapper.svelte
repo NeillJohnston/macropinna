@@ -1,20 +1,23 @@
 <!--A component for typing-animated, cycling text blurbs.-->
 <script lang="ts">
+	import { joystick, type Component, nav } from "$lib/joystick";
     import { onMount } from "svelte";
 
     export let blurbs: string[];
     export let cpm = 1200;
     export let readDelayMs = 3000;
     export let waitDelayMs = 250;
-    export let focused = false;
 
-    export const prev = () => {
+    export let id: string | undefined = undefined;
+    export let component: Component = {};
+
+    const prev = () => {
         t = 0;
         state = 'typing';
         textIndex = 0;
         blurbIndex = (blurbIndex - 1 + blurbs.length) % blurbs.length;
     };
-    export const next = () => {
+    const next = () => {
         t = 0;
         state = 'typing';
         textIndex = 0;
@@ -31,6 +34,20 @@
     let t = 0;
     let state: 'typing' | 'reading' | 'waiting' = 'typing';
     onMount(() => {
+        if (!!id) {
+            joystick.register(id, {
+                ...component,
+                left: {
+                    keep: true,
+                    action: prev
+                },
+                right: {
+                    keep: true,
+                    action: next
+                }
+            });
+        }
+
         return setInterval(() => {
             t += 1;
 
@@ -38,13 +55,13 @@
                 case 'typing':
                     ++textIndex;
 
-                    if (textIndex === blurbs[blurbIndex].length) {
+                    if (textIndex >= blurbs[blurbIndex].length) {
                         t = 0;
                         state = 'reading';
                     }
                     break;
                 case 'reading':
-                    if (t === tReadDelay) {
+                    if (t >= tReadDelay) {
                         t = 0;
                         blurbIndex = (blurbIndex + 1) % blurbs.length;
                         textIndex = 0;
@@ -52,7 +69,7 @@
                     }
                     break;
                 case 'waiting':
-                    if (t === tWaitDelay) {
+                    if (t >= tWaitDelay) {
                         t = 0;
                         state = 'typing';
                     }
@@ -65,6 +82,16 @@
     $: hidden = blurbs[blurbIndex].slice(textIndex);
     // TODO maybe unhardcode the cursor delay, it's not that serious though
     $: cursorOff = state !== 'typing' && (t % 20 >= 10);
+
+    $: {
+        blurbs;
+        t = 0;
+        state = 'typing';
+        textIndex = 0;
+        blurbIndex = 0;
+    }
+
+    $: focused = $nav === id;
 </script>
 
 <p>
