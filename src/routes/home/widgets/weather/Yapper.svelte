@@ -65,6 +65,14 @@
     $: hidden = blurbs[blurbIndex].slice(textIndex);
     // TODO maybe unhardcode the cursor delay, it's not that serious though
     $: cursorOff = state !== 'typing' && (t % 20 >= 10);
+
+    $: {
+        blurbs;
+        t = 0;
+        state = 'typing';
+        textIndex = 0;
+        blurbIndex = 0;
+    }
 </script>
 
 <p>
