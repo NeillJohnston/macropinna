@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api";
 import { listen, type Event } from "@tauri-apps/api/event";
-import { writable } from "svelte/store";
+import { get, writable } from "svelte/store";
 
 export interface Config {
     name: string;
@@ -64,6 +64,10 @@ export const listenConfig = async () => {
     return listen('config', (event: Event<ConfigEvent>) => {
         config.set(event.payload.Set.config);
     });
+}
+
+export const setConfig = async (newConfig: Config) => {
+    await invoke('set_config', { newConfig });
 }
 
 export interface AccessInfo {

@@ -17,13 +17,15 @@
 
     Widgets *can* have the following exports:
     - An `export let props: ...;`
+    - An `export let save: (newProps: any) => void;`
     - An `export let id: string;`
     - An `export const entry = id + ...;`
     - An `export const pause = () => { ... };`
     - An `export const resume = () => { ... };`
     
     Props allow widgets to receive data from config - if a widget doesn't need
-    to receive anything from config, this can be safely omitted.
+    to receive anything from config, this can be safely omitted. Props can be
+    saved to the current config with the save function.
     
     Id and entry enable navigation for a widget - in particular, when a widget
     is mounted, navigating into the widget will push whatever is defined in
@@ -47,6 +49,7 @@
     export let props: any;
     export let id: string;
     export let onScreen: boolean;
+    export let save: (props: any) => void;
 
     $: {
         if (onScreen && widget?.resume) {
@@ -97,6 +100,7 @@
         this={widgetConstructor}
         bind:this={widget}
         props={props}
+        save={save}
         id={id}
     />
 </div>
