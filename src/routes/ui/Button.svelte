@@ -24,12 +24,14 @@
                         pressed = false;
                     }, 50);
                 }
-            }
+            },
+            scrollTo: '#' + id
         });
     });
 </script>
 
 <div id="button" class:pressed={pressed}>
+    <div id={id} />
     <NavBox id={id}>
         <div id="inner">
             <slot />

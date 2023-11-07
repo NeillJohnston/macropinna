@@ -7,6 +7,7 @@
 	import Checkbox from "../ui/Checkbox.svelte";
 	import MenuSection from "../ui/MenuSection.svelte";
 	import CardModal from "../ui/CardModal.svelte";
+	import KeyboardInput from "../ui/KeyboardInput.svelte";
 
     // TODO remove this. It's just a testing ground for UI.
 
@@ -16,6 +17,13 @@
             enter: { alias: Direction.Exit }
         });
     });
+
+    let keyboardInputValue = '';
+    let numberInputValue = '';
+
+    const validateNumber = (value: string) => (
+        /^\d*$/.test(value)
+    );
 
     let carouselIndex = 0;
     let carousel2Index = 0;
@@ -30,10 +38,35 @@
 </script>
 
 <div id="test">
+    <MenuSection label='Text Input'>
+        <KeyboardInput
+            id='test/keyboardInput'
+            component={{
+                down: { id: 'test/keyboardInput2' },
+                exit: {}
+            }}
+            bind:value={keyboardInputValue}
+        />
+        <div class="space" />
+        <div id="number-input">
+            <KeyboardInput
+                id='test/keyboardInput2'
+                component={{
+                    up: { id: 'test/keyboardInput' },
+                    down: { id: 'test/carousel' },
+                    exit: {}
+                }}
+                bind:value={numberInputValue}
+                validate={validateNumber}
+            />
+        </div>
+    </MenuSection>
+    <div class="space" />
     <MenuSection label='Carousels'>
         <CarouselSelector
             id='test/carousel'
             component={{
+                up: { id: 'test/keyboardInput2' },
                 down: { id: 'test/carousel2' },
                 exit: {}
             }}
@@ -106,6 +139,7 @@
             </Checkbox>
         </div>
     </MenuSection>
+    <div class="space" />
 </div>
 <CardModal idPrefix='test/modal'>
     <div id="modal">
@@ -117,6 +151,11 @@
     #test {
         width: 100%;
         height: 100%;
+    }
+
+    #number-input {
+        font: var(--code);
+        font-weight: bold;
     }
 
     .space {

@@ -33,12 +33,14 @@
                     index = (index + 1) % values.length;
                     onChange(index);
                 }
-            }
+            },
+            scrollTo: '#' + id
         });
     });
 </script>
 
 <NavBox id={id}>
+    <div id={id} />
     <div id="carousel">
         <!-- Wrapping the icons in a div prevents the text from overflowing onto the icons -->
         <div><Icon icon='carbon:chevron-left' inline /></div>

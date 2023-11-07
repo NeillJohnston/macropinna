@@ -24,12 +24,14 @@
                     on = !on;
                     onChange(on);
                 }
-            }
+            },
+            scrollTo: '#' + id
         });
     });
 </script>
 
 <div id="checkbox">
+    <div id={id} />
     <NavBox id={id}>
         <div id="inner">
             <Icon icon={icon} inline />

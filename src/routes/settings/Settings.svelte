@@ -21,7 +21,7 @@
             id: 'settings/test',
             label: 'Test',
             component: Test,
-            entrance: 'test/carousel'
+            entrance: 'test/keyboardInput'
         },
         {
             id: 'settings/remotes',
