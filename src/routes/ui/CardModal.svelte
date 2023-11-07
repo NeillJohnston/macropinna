@@ -5,6 +5,8 @@
     export let idPrefix: string;
     // Set to true if you want to vertically center the contents.
     export let center: boolean = false;
+    // Set to true if you need to enable vertical scrolling.
+    export let scroll: boolean = false;
     // The card's aspect ratio (sets CSS property aspect-ratio).
     export let aspectRatio = '4/3';
 
@@ -13,7 +15,12 @@
 
 {#if shown}
 <div id="modal">
-    <div id="card" class:center={center} style:aspect-ratio={aspectRatio}>
+    <div
+        id="card"
+        class:center={center}
+        class:scroll={scroll}
+        style:aspect-ratio={aspectRatio}
+    >
         <slot />
     </div>
 </div>
@@ -43,5 +50,9 @@
     .center {
         display: flex;
         align-items: center;
+    }
+
+    .scroll {
+        overflow-y: scroll;
     }
 </style>
