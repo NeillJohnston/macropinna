@@ -120,6 +120,7 @@
 	}
 
 	.selected {
-		border-color: var(--fg);
+		box-shadow: 0 0 25px var(--fg);
+		border-radius: 10px;
 	}
 </style>

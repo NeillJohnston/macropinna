@@ -23,6 +23,7 @@
 	let running = false;
 	let paused = false;
 	let expired = false;
+	let startButtonText = 'Start';
 
 	// Pomodoro Navigation
 	const buttonLayout = [
@@ -30,35 +31,30 @@
 		['start', 'reset']												 // [1][0, 1]
 	];
 
-	let currentRow = 0;
-	let currentCol = 0;
-	let currentSelectedButton: string;
+	let row = 0;
+	let column = 0;
+	let currentSelectedButton = buttonLayout[0][0];
 
 	export const navigate = (direction: string) => {
 		switch (direction) {
 			case 'up':
-				if (currentRow > 0) {
-					currentRow--;
-				}
+				if(row === 1) row--;
+				if(column === 1) column++;
 				break;
 			case 'down':
-				if (currentRow < buttonLayout.length - 1) {
-					currentRow++;
-				}
+				if(row === 0) row++;
+				if(column > 0) column--;
 				break;
 			case 'left':
-				if (currentCol > 0) {
-					currentCol--;
-				}
+				if(column > 0) column--;
 				break;
 			case 'right':
-				if (currentCol < buttonLayout[currentRow].length - 1) {
-					currentCol++;
-				}
+				if(column < buttonLayout[row].length - 1) column++;
+				break;
+			default:
 				break;
 		}
-
-		currentSelectedButton = buttonLayout[currentRow][currentCol];
+		currentSelectedButton = buttonLayout[row][column];
 	};
 
 	// Pomodoro Functionality
@@ -70,17 +66,25 @@
 		} else {
 			running = true;
 			paused = false;
-			if (timeRemaining <= 0) return;
+			if (timeRemaining > 0) {
 
-			timer = setInterval(() => {
-				if (timeRemaining <= 0) {
-					clearInterval(timer);
-					expired = true;
-				} else {
-					timeRemaining--;
-				}
-			}, 1000);
+				timer = setInterval(() => {
+					if (timeRemaining <= 0) {
+						expired = true;
+						running = false;
+						startButtonText = getButtonText();
+						clearInterval(timer);
+					} else {
+						timeRemaining--;
+					}
+				}, 1000);
+
+			} else {
+				expired = true;
+				running = false;
+			}
 		}
+		startButtonText = getButtonText();
 	};
 
 	const reset = () => {
@@ -89,6 +93,7 @@
 		running = false;
 		paused = false;
 		expired = false;
+		startButtonText = getButtonText();
 	};
 
 	const formatTime = (time: number): string => {
@@ -115,7 +120,7 @@
 		timeRemaining = time;
 	};
 
-	const setButtonText = (): string => {
+	const getButtonText = (): string => {
 		if (running) {
 			return 'Pause';
 		} else if (paused) {
@@ -128,6 +133,24 @@
 	};
 
 	// TODO: Auto advance pomodoro (WIP) - want to auto advance to short break, back to pomodoro, and then long break after a user-defined number of cycles has been completed
+
+	export const handleUserEnter = () => {
+		switch(currentSelectedButton) {
+			case 'start':
+				if (expired) {
+					reset();
+				} else {
+					toggleTimer();
+				}
+				break;
+			case 'reset':
+				reset();
+				break;
+			default:
+				setTimerType(currentSelectedButton);
+				break;
+		}
+	};
 
 	onMount(() => {
 		joystick.register(entry, {
@@ -147,32 +170,29 @@
 				keep: true,
 				action: () => navigate('right')
 			},
+			enter: {
+				keep: true,
+				action: handleUserEnter
+			},
 			exit: {}
 		});
 	});
+	// TODO: Make Start and Reset Buttons responsive (like if someone clicked it and it became 'active')
+	// TODO: Remove button selection glow when exiting pomodoro nav
 </script>
 
 <div id="pomodoro">
 	<p id="title"><strong>Focus Module:</strong></p>
-	<div>
+	<div id="mode_buttons">
 		<button class:selected={currentSelectedButton === 'pomodoro'} class:active={timerType === 'pomodoro'}> Pomodoro </button>
 		<button class:selected={currentSelectedButton === 'short break'} class:active={timerType === 'short break'}> Short Break </button>
-		<button
-			class:selected={currentSelectedButton === 'long break'}
-			class:active={timerType === 'long break'}
-		>
-			Long Break
-		</button>
+		<button class:selected={currentSelectedButton === 'long break'} class:active={timerType === 'long break'}> Long Break </button>
 	</div>
 	<span id="timer">{formatTime(timeRemaining)}</span>
 	<br />
 	<div id="timer_controls">
-		<button id="start_pause" class:selected={currentSelectedButton === 'start'}
-			>{setButtonText()}</button
-		>
-		<button id="reset" class:selected={currentSelectedButton === 'reset'}
-			><Icon icon={'lucide:timer-reset'} inline /></button
-		>
+		<button id="start_pause" class:selected={currentSelectedButton === 'start'}> {startButtonText} </button>
+		<button id="reset" class:selected={currentSelectedButton === 'reset'}><Icon icon={'lucide:timer-reset'} inline /></button>
 	</div>
 </div>
 
@@ -240,7 +260,11 @@
 		color: black;
 	}
 
+	#mode_buttons > .selected {
+		box-shadow: 0 2px 20px var(--fg);
+	}
+
 	.selected {
-		background-color: #d6caca;
+		box-shadow: 0 4px 20px var(--fg);
 	}
 </style>
