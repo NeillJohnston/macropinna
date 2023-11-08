@@ -8,6 +8,7 @@
 	import { Direction, joystick, nav } from '$lib/joystick';
 	import Button from '../../ui/Button.svelte';
 	import Icon from '@iconify/svelte';
+	import EditButton from './EditButton.svelte';
 
     export let props: {
         xAlign: XAlign;
@@ -89,8 +90,7 @@
     <p id="text" class={xAlignClass}><strong>{timeString}</strong></p>
 </div>
 {#if showEditButton}
-<div id="edit-button">
-    <Button
+    <EditButton
         id={entry}
         component={{
             exit: {}
@@ -99,10 +99,7 @@
             reset();
             joystick.push(formatInputId);
         }}
-    >
-        <Icon icon='carbon:edit' inline />
-    </Button>
-</div>
+    />
 {/if}
 <CardModal idPrefix={id + '/edit/'}>
     <div id="edit-modal">
@@ -119,17 +116,15 @@
             {/each}
         </div>
         <MenuSection label="Time format">
-            <div id="format-input">
-                <KeyboardInput
-                    id={formatInputId}
-                    bind:value={formatInputValue}
-                    component={{
-                        down: { id: saveButtonId },
-                        exit: {}
-                    }}
-                    placeholder="Time format"
-                />
-            </div>
+            <KeyboardInput
+                id={formatInputId}
+                bind:value={formatInputValue}
+                component={{
+                    down: { id: saveButtonId },
+                    exit: {}
+                }}
+                placeholder="Time format"
+            />
             {#if formatInputValue.length > 0}
             <p class="preview">{strftime(formatInputValue)}</p>
             {:else}
@@ -163,7 +158,7 @@
     }
 
     #clock > p {
-        font-size: 1.41em;
+        font-size: 1.80em;
         white-space: pre-line;
     }
 
@@ -171,13 +166,6 @@
         width: 100%;
         padding: var(--sm);
         box-sizing: border-box;
-    }
-
-    #edit-button {
-        position: absolute;
-        top: var(--sm);
-        right: var(--sm);
-        font-size: var(--f-1);
     }
 
     #edit-modal {
@@ -207,13 +195,11 @@
         font-weight: bold;
     }
 
-    #format-input {
-    }
-
     .preview {
         margin: var(--xs) 0;
-        font-size: var(--f-2);
         white-space: pre-line;
+        font-size: var(--f-2);
+        font-weight: bold;
     }
 
     .space {

@@ -7,6 +7,7 @@
 	import { getWeather } from "./provider";
 	import Button from "../../../ui/Button.svelte";
 	import EditWeatherModal from "./EditWeatherModal.svelte";
+	import EditButton from "../EditButton.svelte";
 
     export let props: {
         xAlign: XAlign;
@@ -82,21 +83,17 @@
     </div>
 </div>
 {#if showEditButton}
-<div id="edit-button">
-    <Button
-        id={editButtonId}
-        component={{
-            down: { id: entry },
-            exit: {}
-        }}
-        onPress={() => {
-            editModal.reset();
-            joystick.push(editModal.entry);
-        }}
-    >
-        <Icon icon='carbon:edit' inline />
-    </Button>
-</div>
+<EditButton
+    id={editButtonId}
+    component={{
+        down: { id: entry },
+        exit: {}
+    }}
+    onPress={() => {
+        editModal.reset();
+        joystick.push(editModal.entry);
+    }}
+/>
 {/if}
 <EditWeatherModal
     props={props}
@@ -117,7 +114,7 @@
 
     #container {
         width: 100%;
-        padding: 0.25rem;
+        padding: var(--sm);
         box-sizing: border-box;
     }
 
@@ -138,14 +135,7 @@
     }
 
     .space {
-        height: 0.5rem;
-    }
-
-    #edit-button {
-        position: absolute;
-        top: var(--sm);
-        right: var(--sm);
-        font-size: var(--f-1);
+        height: var(--md);
     }
 
     /* X/Y alignment classes */
