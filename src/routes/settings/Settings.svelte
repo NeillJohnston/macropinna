@@ -5,7 +5,6 @@
 	import NavLabel from "../ui/NavLabel.svelte";
     // import General from "./General.svelte";
 	import Remotes from "./Remotes.svelte";
-	import Test from "./Test.svelte";
 
     export let goDown: () => void;
 
@@ -17,12 +16,6 @@
         //     component: General,
         //     entrance: 'general/list'
         // },
-        {
-            id: 'settings/test',
-            label: 'Test',
-            component: Test,
-            entrance: 'test/keyboardInput'
-        },
         {
             id: 'settings/remotes',
             label: 'Remotes',
