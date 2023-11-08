@@ -4,9 +4,9 @@
 </script>
 
 <script lang="ts">
-	import { config } from "$lib/api";
+	import { config, setConfig, type Config } from "$lib/api";
 	import { onMount } from "svelte";
-    import { Direction, joystick } from '$lib/joystick';
+    import { Direction, joystick, nav } from '$lib/joystick';
 	import Screen from '../Screen.svelte';
 	import Widget from "./Widget.svelte";
 
@@ -50,6 +50,14 @@
     const widgetId = (screenIndex: number, widgetIndex: number) => (
         `home/${screenIndex}/${widgetIndex}`
     );
+
+    const widgetPropsSave = (screenIndex: number, widgetIndex: number) => (
+        (newProps: any) => {
+            const newConfig: Config = { ...$config };
+            newConfig.home.screens[screenIndex].widgets[widgetIndex].props = newProps;
+            setConfig(newConfig);
+        }
+    );
 </script>
 
 <Screen
@@ -77,10 +85,12 @@
             <Widget
                 name={name}
                 coords={coords}
-                props={props}
+                props={{ ...props }}
                 id={widgetId(screenIndex, widgetIndex)}
                 leftId={widgetId(screenIndex, (widgetIndex - 1 + screen.widgets.length) % screen.widgets.length)}
                 rightId={widgetId(screenIndex, (widgetIndex + 1) % screen.widgets.length)}
+                onScreen={joystick.stack.includes('home') && screenIndex === index}
+                save={widgetPropsSave(index, widgetIndex)}
             />
             {/each}
         </div>

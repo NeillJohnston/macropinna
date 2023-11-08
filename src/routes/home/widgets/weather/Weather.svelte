@@ -1,101 +1,56 @@
 <script lang="ts">
 	import type { XAlign, YAlign } from "$lib/layout";
-	import Yapper from "./Yapper.svelte";
-    import { invoke } from '@tauri-apps/api';
+	import Yapper from "../../../ui/Yapper.svelte";
     import { onMount } from "svelte";
-    import Qty from 'js-quantities';
-    import strftime from 'strftime';
 	import { joystick, nav } from "$lib/joystick";
-	import Modal from "../../../ui/Modal.svelte";
 	import Icon from "@iconify/svelte";
-	import NavText from "../../../ui/NavText.svelte";
+	import { getWeather } from "./provider";
+	import Button from "../../../ui/Button.svelte";
+	import EditWeatherModal from "./EditWeatherModal.svelte";
+	import EditButton from "../EditButton.svelte";
 
     export let props: {
         xAlign: XAlign;
         yAlign: YAlign;
+        heading: string;
+        subheadings: string[];
     };
+    export let save: () => void;
     export let id: string;
     export const entry = id + '/yapper';
 
+    let editModal: EditWeatherModal;
+
     const editButtonId = id + '/editButton';
-    // const editModalId = id + '/editModal';
+    const editModalId = id + '/editModal';
 
     $: showEditButton = $nav.startsWith(id + '/');
-    // $: showEditModal = $nav.startsWith(editModalId);
 
-    const xAlignClass = props.xAlign;
-    const yAlignClass = props.yAlign;
-
-    const fmt = (x: number, from: string, to: string, d?: number): string => (
-        Qty(x, from).to(to).scalar.toFixed(d ?? 0)
-    );
-
-    // TODO unhardcode time format
-    const timeFmt = (t: number) => (
-        strftime('%l:%M%P', new Date(1000 * t))
-    );
-
+    let weatherData: any = undefined;
     let weather = {
         heading: 'Fetching weather...',
         time: 'never',
         subheadings: ['...']
     };
-
-    let yapper: any;
+    $: {
+        if (!!weatherData) {
+            const getByKey = (key: string) => weatherData[key] ?? '?';
+    
+            weather = {
+                heading: getByKey(props.heading),
+                time: weatherData.fetched,
+                subheadings: props.subheadings.map(key => getByKey(key))
+            };
+        }
+    }
 
     onMount(() => {
-        joystick.register(entry, {
-            left: {
-                keep: true,
-                action: yapper.prev
-            },
-            right: {
-                keep: true,
-                action: yapper.next
-            },
-            up: { id: editButtonId },
-            exit: {}
-        });
-
-        joystick.register(editButtonId, {
-            enter: {
-                keep: true,
-                // id: editModalId
-            },
-            down: { id: entry },
-            exit: {}
-        });
-
         const refreshWeather = async () => {
-            const res: any = await invoke('get_weather');
-            if (!!res) {
-                const extract = (w: any) => ({
-                    time: timeFmt(w.dt),
-                    condition: w.weather[0].description,
-                    realTemp: fmt(w.main.temp, 'tempK', 'tempF'),
-                    feelsLikeTemp: fmt(w.main.feels_like, 'tempK', 'tempF'),
-                });
-
-                // TODO should switch by provider in the future, right now this
-                // is hardcoded for OpenWeatherMap
-                const cityName = res.current.name;
-
-                const now = extract(res.current);
-                const later1 = extract(res.forecast.list[0]);
-                const later2 = extract(res.forecast.list[1]);
-
-                const sunsetTime = timeFmt(res.current.sys.sunset);
-
-                weather = {
-                    heading: `It's ${now.realTemp}°F (feels like ${now.feelsLikeTemp}°F) here in ${cityName}, with ${now.condition}.`,
-                    time: now.time,
-                    subheadings: [
-                        `Sunset today is at ${sunsetTime}.`,
-                        `${later1.time}: expect ${later1.condition} and temperatures around ${later1.realTemp}°F.`,
-                        `${later2.time}: expect ${later2.condition} and temperatures around ${later2.realTemp}°F.`,
-                    ]
-                };
-            }
+            // TODO unhardcode formats/units
+            weatherData = await getWeather({
+                timeFormat: '%l:%M%P',
+                tempUnit: 'F'
+            });
         };
 
         refreshWeather();
@@ -103,6 +58,9 @@
         // Just refresh every 10 minutes, should be fine
         return setInterval(refreshWeather, 10 * 60_000);
     });
+
+    const xAlignClass = props.xAlign;
+    const yAlignClass = props.yAlign;
 </script>
 
 <div id="weather" class={yAlignClass}>
@@ -112,23 +70,38 @@
         <div class="space" />
         <div id="yapper">
             <Yapper
-                bind:this={yapper}
                 blurbs={weather.subheadings}
                 cpm={800}
                 readDelayMs={10_000}
-                focused={$nav === entry}
+                id={entry}
+                component={{
+                    up: { id: editButtonId },
+                    exit: {}
+                }}
             />
         </div>
     </div>
 </div>
 {#if showEditButton}
-<div id="edit-button">
-    <NavText id={editButtonId}><Icon icon='carbon:edit' inline /></NavText>
-</div>
+<EditButton
+    id={editButtonId}
+    component={{
+        down: { id: entry },
+        exit: {}
+    }}
+    onPress={() => {
+        editModal.reset();
+        joystick.push(editModal.entry);
+    }}
+/>
 {/if}
-<!-- {#if showEditModal}
-<Modal>hello</Modal>
-{/if} -->
+<EditWeatherModal
+    props={props}
+    save={save}
+    id={editModalId}
+    bind:this={editModal}
+    data={weatherData}
+/>
 
 <style>
     #weather {
@@ -141,7 +114,7 @@
 
     #container {
         width: 100%;
-        padding: 0.25rem;
+        padding: var(--sm);
         box-sizing: border-box;
     }
 
@@ -162,14 +135,7 @@
     }
 
     .space {
-        height: 0.5rem;
-    }
-
-    #edit-button {
-        position: absolute;
-        top: 0.25rem;
-        right: 0.25rem;
-        font-size: 0.71rem;
+        height: var(--md);
     }
 
     /* X/Y alignment classes */
