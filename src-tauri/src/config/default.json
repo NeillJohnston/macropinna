@@ -13,6 +13,7 @@
                 "y": 0
               },
               "props": {
+                "format": "%A, %b %e%n%l:%M%P",
                 "xAlign": "right",
                 "yAlign": "top"
               }

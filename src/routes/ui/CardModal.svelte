@@ -38,6 +38,7 @@
         padding: var(--xl);
         background-color: rgba(0, 0, 0, 0.5);
         box-sizing: border-box;
+        z-index: 10000;
     }
 
     #card {

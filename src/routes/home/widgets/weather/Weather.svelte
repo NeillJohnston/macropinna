@@ -143,9 +143,9 @@
 
     #edit-button {
         position: absolute;
-        top: 0.25rem;
-        right: 0.25rem;
-        font-size: 0.71rem;
+        top: var(--sm);
+        right: var(--sm);
+        font-size: var(--f-1);
     }
 
     /* X/Y alignment classes */
