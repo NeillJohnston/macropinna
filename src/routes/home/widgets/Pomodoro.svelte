@@ -10,43 +10,38 @@
 	const carouselID = id + '/pomodoro/carousel';
 	const resetButtonID = id + '/pomodoro/reset';
 
-	let timerType = 'pomodoro';
-	let time = 1500;
-	let timer: number;
-
 	// Map to store Pomodoro lengths in seconds, TODO: need to make this configurable in settings
 	const timerTypes = new Map<string, number>([
-		['pomodoro', 1500],
-		['short break', 300],
-		['long break', 900]
+		['Pomodoro', 1500],
+		['Short break', 300],
+		['Long break', 900]
 	]);
 
-	// Timer related variables and functions
-	let timeRemaining = time;
-	let running = false;
-	let paused = false;
-	let expired = false;
 	let startButtonText = 'Start';
 
+	// Timer related variables and functions
+	let timerType = 'pomodoro';
+	let time = 1500;
+	let timeRemaining = time;
+	let state: 'idle' | 'running' | 'paused' | 'expired' = 'idle';
+	let timer: number;
+
 	// Carousel Navigation
-	const timerTypeValues = ['pomodoro', 'short break', 'long break'];
+	const timerTypeValues = ['Pomodoro', 'Short break', 'Long break'];
 	let timerTypeIndex = 0;
 
 	// Pomodoro Functionality
 	const toggleTimer = () => {
-		if (running) {
+		if (state === 'running') {
 			clearInterval(timer);
-			running = false;
-			paused = true;
+			state = 'paused';
 		} else {
-			running = true;
-			paused = false;
+			state = 'running';
 			if (timeRemaining > 0) {
 
 				timer = setInterval(() => {
 					if (timeRemaining <= 0) {
-						expired = true;
-						running = false;
+						state = 'expired';
 						startButtonText = getButtonText();
 						clearInterval(timer);
 					} else {
@@ -55,8 +50,7 @@
 				}, 1000);
 
 			} else {
-				expired = true;
-				running = false;
+				state = 'expired';
 			}
 		}
 		startButtonText = getButtonText();
@@ -65,9 +59,7 @@
 	const reset = () => {
 		clearInterval(timer);
 		timeRemaining = time;
-		running = false;
-		paused = false;
-		expired = false;
+		state = 'idle';
 		startButtonText = getButtonText();
 	};
 
@@ -96,11 +88,11 @@
 	};
 
 	const getButtonText = (): string => {
-		if (running) {
+		if (state === 'running') {
 			return 'Pause';
-		} else if (paused) {
+		} else if (state === 'paused') {
 			return 'Resume';
-		} else if (expired) {
+		} else if (state === 'expired') {
 			return 'Reset';
 		} else {
 			return 'Start';
@@ -108,7 +100,7 @@
 	};
 
 	const handleStartButtonPress = () => {
-		if (expired) {
+		if (state === 'expired') {
 			reset();
 		} else {
 			toggleTimer();
@@ -119,8 +111,7 @@
 </script>
 
 <div id="pomodoro">
-	<p id="title"><strong>Focus Module:</strong></p>
-	<div id="mode_buttons">
+	<div id="carousel">
 		<CarouselSelector
 			id={carouselID}
 			component={{
@@ -154,17 +145,12 @@
 			}}
 			onPress={reset}
 		>
-			<Icon icon="lucide:timer-reset"></Icon>
+			<Icon icon="lucide:timer-reset" inline></Icon>
 		</Button>
 	</div>
 </div>
 
 <style>
-	#title {
-		margin: 0;
-		font-size: var(--f0);
-	}
-
 	#pomodoro {
 		display: flex;
 		flex-direction: column;
@@ -172,13 +158,18 @@
 		justify-content: center;
 	}
 
-	#mode_buttons {
+	#carousel {
 		font-size: var(--f-1);
-		margin-top: var(--sm);
+		width: 70%;
 	}
 
 	#timer {
-		font-size: var(--f2);
-		margin-bottom: var(--sm);
+		font-size: var(--f3);
+		margin: var(--sm);
+	}
+
+	#timer_controls {
+		font-size: var(--f0);
+		margin-top: var(--md);
 	}
 </style>
