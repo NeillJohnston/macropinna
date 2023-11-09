@@ -1,11 +1,14 @@
 <script lang="ts">
-	import { joystick } from '$lib/joystick';
 	import Icon from '@iconify/svelte';
-	import { onMount } from 'svelte';
+	import CarouselSelector from '../../ui/CarouselSelector.svelte';
+	import Button from '../../ui/Button.svelte';
 
 	// Nav related exports
 	export let id: string;
-	export const entry = id + '/pomodoro';
+	export const entry = id + '/pomodoro/start_pause';
+
+	const carouselID = id + '/pomodoro/carousel';
+	const resetButtonID = id + '/pomodoro/reset';
 
 	let timerType = 'pomodoro';
 	let time = 1500;
@@ -25,37 +28,9 @@
 	let expired = false;
 	let startButtonText = 'Start';
 
-	// Pomodoro Navigation
-	const buttonLayout = [
-		['pomodoro', 'short break', 'long break'], // [0][0, 1, 2]
-		['start', 'reset']												 // [1][0, 1]
-	];
-
-	let row = 0;
-	let column = 0;
-	let currentSelectedButton = buttonLayout[0][0];
-
-	export const navigate = (direction: string) => {
-		switch (direction) {
-			case 'up':
-				if(row === 1) row--;
-				if(column === 1) column++;
-				break;
-			case 'down':
-				if(row === 0) row++;
-				if(column > 0) column--;
-				break;
-			case 'left':
-				if(column > 0) column--;
-				break;
-			case 'right':
-				if(column < buttonLayout[row].length - 1) column++;
-				break;
-			default:
-				break;
-		}
-		currentSelectedButton = buttonLayout[row][column];
-	};
+	// Carousel Navigation
+	const timerTypeValues = ['pomodoro', 'short break', 'long break'];
+	let timerTypeIndex = 0;
 
 	// Pomodoro Functionality
 	const toggleTimer = () => {
@@ -109,10 +84,10 @@
 		return time < 0 && seconds ? `-${formattedTime}` : formattedTime;
 	};
 
-	const setTimerType = (newType: string) => {
+	const setTimerType = () => {
 		reset();
 
-		timerType = newType;
+		timerType = timerTypeValues[timerTypeIndex];
 
 		// Store new time based on timer type
 		const newTime = timerTypes.get(timerType);
@@ -132,84 +107,65 @@
 		}
 	};
 
-	// TODO: Auto advance pomodoro (WIP) - want to auto advance to short break, back to pomodoro, and then long break after a user-defined number of cycles has been completed
-
-	export const handleUserEnter = () => {
-		switch(currentSelectedButton) {
-			case 'start':
-				if (expired) {
-					reset();
-				} else {
-					toggleTimer();
-				}
-				break;
-			case 'reset':
-				reset();
-				break;
-			default:
-				setTimerType(currentSelectedButton);
-				break;
+	const handleStartButtonPress = () => {
+		if (expired) {
+			reset();
+		} else {
+			toggleTimer();
 		}
 	};
 
-	onMount(() => {
-		joystick.register(entry, {
-			up: {
-				keep: true,
-				action: () => navigate('up')
-			},
-			down: {
-				keep: true,
-				action: () => navigate('down')
-			},
-			left: {
-				keep: true,
-				action: () => navigate('left')
-			},
-			right: {
-				keep: true,
-				action: () => navigate('right')
-			},
-			enter: {
-				keep: true,
-				action: handleUserEnter
-			},
-			exit: {}
-		});
-	});
-	// TODO: Make Start and Reset Buttons responsive (like if someone clicked it and it became 'active')
-	// TODO: Remove button selection glow when exiting pomodoro nav
+	// TODO: Auto advance pomodoro (WIP) - want to auto advance to short break, back to pomodoro, and then long break after a user-defined number of cycles has been completed
 </script>
 
 <div id="pomodoro">
 	<p id="title"><strong>Focus Module:</strong></p>
 	<div id="mode_buttons">
-		<button class:selected={currentSelectedButton === 'pomodoro'} class:active={timerType === 'pomodoro'}> Pomodoro </button>
-		<button class:selected={currentSelectedButton === 'short break'} class:active={timerType === 'short break'}> Short Break </button>
-		<button class:selected={currentSelectedButton === 'long break'} class:active={timerType === 'long break'}> Long Break </button>
+		<CarouselSelector
+			id={carouselID}
+			component={{
+				down: { id: entry },
+				exit: {}
+			}}
+			onChange={setTimerType}
+			bind:index={timerTypeIndex}
+			values={timerTypeValues}
+		/>
 	</div>
 	<span id="timer">{formatTime(timeRemaining)}</span>
-	<br />
 	<div id="timer_controls">
-		<button id="start_pause" class:selected={currentSelectedButton === 'start'}> {startButtonText} </button>
-		<button id="reset" class:selected={currentSelectedButton === 'reset'}><Icon icon={'lucide:timer-reset'} inline /></button>
+		<Button
+			id={entry}
+			component={{
+				up: { id: carouselID },
+				right: { id: resetButtonID },
+				exit: {}
+			}}
+			onPress={handleStartButtonPress}
+		> 
+			{startButtonText} 
+	  </Button>
+		<Button
+			id={resetButtonID}
+			component={{
+				up: { id: carouselID },
+				left: { id: entry },
+				exit: {}
+			}}
+			onPress={reset}
+		>
+			<Icon icon="lucide:timer-reset"></Icon>
+		</Button>
 	</div>
 </div>
 
 <style>
-	button {
-		cursor: pointer;
-		border-radius: 5% 5%;
-		border: 1px solid var(--fg);
-	}
-
 	#title {
 		margin: 0;
-		font-size: 1rem;
+		font-size: var(--f0);
 	}
 
 	#pomodoro {
-		font-size: 0;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -217,54 +173,12 @@
 	}
 
 	#mode_buttons {
-		font-size: 0.71rem;
-		margin-top: 0.3rem;
-	}
-
-	#mode_buttons > button {
-		padding: 0.4rem;
-		border-radius: 7% 5%;
-		background-color: transparent;
-		border: 2px solid var(--fg);
-		color: var(--fg);
+		font-size: var(--f-1);
+		margin-top: var(--sm);
 	}
 
 	#timer {
-		font-size: 2rem;
-		margin-top: 0.4rem;
-	}
-
-	#timer_controls {
-		margin-top: 0.5rem;
-		width: 80%;
-		display: flex;
-	}
-
-	#timer_controls > #start_pause {
-		margin-right: 0.2rem;
-		flex: 4;
-		border-radius: 2%;
-		padding: 0.35rem;
-		font-size: 0.71rem;
-		border: none;
-	}
-
-	#timer_controls > #reset {
-		flex: 1;
-		border: none;
-	}
-
-	#mode_buttons > .active {
-		cursor: default;
-		background-color: var(--fg);
-		color: black;
-	}
-
-	#mode_buttons > .selected {
-		box-shadow: 0 2px 20px var(--fg);
-	}
-
-	.selected {
-		box-shadow: 0 4px 20px var(--fg);
+		font-size: var(--f2);
+		margin-bottom: var(--sm);
 	}
 </style>
