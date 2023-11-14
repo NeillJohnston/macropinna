@@ -1,34 +1,54 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import CarouselSelector from '../../ui/CarouselSelector.svelte';
-	import Button from '../../ui/Button.svelte';
+	import CarouselSelector from '../../../ui/CarouselSelector.svelte';
+	import Button from '../../../ui/Button.svelte';
+	import { joystick, nav } from '$lib/joystick';
+	import EditButton from '../EditButton.svelte';
+	import EditPomodoroModal from './EditPomodoroModal.svelte';
+	import type { XAlign, YAlign } from '$lib/layout';
+	import { onMount } from 'svelte';
 
+	export let props: {
+		xAlign: XAlign;
+		yAlign: YAlign;
+		timerTypes: { [key: string]: number };
+	};
+	
 	// Nav related exports
 	export let id: string;
 	export const entry = id + '/pomodoro/start_pause';
 
+	let editModal: EditPomodoroModal;
+	export let save: () => void;
+
 	const carouselID = id + '/pomodoro/carousel';
 	const resetButtonID = id + '/pomodoro/reset';
+	const editButtonID = id + '/editButton';
+	const editModalID = id + '/editModal';
+
+	$: showEditButton = $nav.startsWith(id + '/');
 
 	// Map to store Pomodoro lengths in seconds, TODO: need to make this configurable in settings
-	const timerTypes = new Map<string, number>([
-		['Pomodoro', 1500],
-		['Short break', 300],
-		['Long break', 900]
-	]);
+	// const timerTypes = new Map<string, number>([
+	// 	['Pomodoro', 1500],
+	// 	['Short break', 300],
+	// 	['Long break', 900]
+	// ]);
 
 	let startButtonText = 'Start';
 
 	// Timer related variables and functions
+	let timerTypes: Map<string, number> = new Map(Object.entries(props.timerTypes));
 	let timerType = 'pomodoro';
 	let time = 1500;
 	let timeRemaining = time;
 	let state: 'idle' | 'running' | 'paused' | 'expired' = 'idle';
 	let timer: number;
-
+	
 	// Carousel Navigation
 	const timerTypeValues = ['Pomodoro', 'Short break', 'Long break'];
 	let timerTypeIndex = 0;
+
 
 	// Pomodoro Functionality
 	const toggleTimer = () => {
@@ -38,7 +58,6 @@
 		} else {
 			state = 'running';
 			if (timeRemaining > 0) {
-
 				timer = setInterval(() => {
 					if (timeRemaining <= 0) {
 						state = 'expired';
@@ -48,7 +67,6 @@
 						timeRemaining--;
 					}
 				}, 1000);
-
 			} else {
 				state = 'expired';
 			}
@@ -133,22 +151,45 @@
 				exit: {}
 			}}
 			onPress={handleStartButtonPress}
-		> 
-			{startButtonText} 
-	  </Button>
+		>
+			{startButtonText}
+		</Button>
 		<Button
 			id={resetButtonID}
 			component={{
 				up: { id: carouselID },
 				left: { id: entry },
+				right: { id: editButtonID },
 				exit: {}
 			}}
 			onPress={reset}
 		>
-			<Icon icon="lucide:timer-reset" inline></Icon>
+			<Icon icon="lucide:timer-reset" inline />
 		</Button>
 	</div>
 </div>
+{#if showEditButton}
+<div id="edit_button">
+	<EditButton
+		id={editButtonID}
+		component={{
+			up: { id: carouselID },
+			left: { id: resetButtonID },
+			exit: {}
+		}}
+		onPress={() => {
+			editModal.reset();
+			joystick.push(editModal.entry);
+		}}
+	/>
+</div>
+{/if}
+<EditPomodoroModal
+	props={props}
+	save={save}
+	id={editModalID}
+	bind:this={editModal}
+/>
 
 <style>
 	#pomodoro {
@@ -171,5 +212,11 @@
 	#timer_controls {
 		font-size: var(--f0);
 		margin-top: var(--md);
+	}
+
+	#edit_button {
+		position: absolute;
+		bottom: var(--xl);
+		right: var(--sm);
 	}
 </style>

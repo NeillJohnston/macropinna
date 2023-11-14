@@ -76,7 +76,13 @@
                 "y": 3
               },
               "props": {
-                "xAlign": "center"
+                "xAlign": "center",
+                "yAlign": "center",
+                "timerTypes": {
+                  "Pomodoro": 1500,
+                  "Short break": 300,
+                  "Long break": 900
+                }
               }
             },
             {
