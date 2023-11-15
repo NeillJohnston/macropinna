@@ -6,14 +6,13 @@
 	import EditButton from '../EditButton.svelte';
 	import EditPomodoroModal from './EditPomodoroModal.svelte';
 	import type { XAlign, YAlign } from '$lib/layout';
-	import { onMount } from 'svelte';
 
 	export let props: {
 		xAlign: XAlign;
 		yAlign: YAlign;
 		timerTypes: { [key: string]: number };
 	};
-	
+
 	// Nav related exports
 	export let id: string;
 	export const entry = id + '/pomodoro/start_pause';
@@ -125,10 +124,12 @@
 		}
 	};
 
+	$: yAlignClass = props.yAlign;
+
 	// TODO: Auto advance pomodoro (WIP) - want to auto advance to short break, back to pomodoro, and then long break after a user-defined number of cycles has been completed
 </script>
 
-<div id="pomodoro">
+<div id="pomodoro" class={yAlignClass}>
 	<div id="carousel">
 		<CarouselSelector
 			id={carouselID}
@@ -193,10 +194,11 @@
 
 <style>
 	#pomodoro {
+		width: 100%;
+		height: 100%;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: center;
 	}
 
 	#carousel {
@@ -205,8 +207,9 @@
 	}
 
 	#timer {
-		font-size: var(--f3);
-		margin: var(--sm);
+		font-size: 2.5em;
+		line-height: 1;
+		margin: var(--sm) 0;
 	}
 
 	#timer_controls {
@@ -219,4 +222,9 @@
 		bottom: var(--xl);
 		right: var(--sm);
 	}
+
+	/* Y alignment classes */
+	.top    { justify-content: flex-start; }
+	.middle { justify-content: center; }
+	.bottom { justify-content: flex-end; }
 </style>
