@@ -9,6 +9,8 @@
     export let component: Component = {};
     // Callback for when the button is pressed.
     export let onPress: () => void;
+    // Set to true to disable the button's pressing functionality.
+    export let disabled = false;
 
     let pressed = false;
     onMount(() => {
@@ -17,6 +19,8 @@
             enter: {
                 keep: true,
                 action: () => {
+                    if (disabled) return;
+                    
                     onPress();
 
                     pressed = true;
@@ -30,7 +34,7 @@
     });
 </script>
 
-<div id="button" class:pressed={pressed}>
+<div id="button" class:pressed={!disabled && pressed} class:disabled={disabled}>
     <div id={id} />
     <NavBox id={id}>
         <div id="inner">
@@ -50,6 +54,10 @@
     #button.pressed {
         background-color: var(--fg2);
         transition: background-color ease 0.0s;
+    }
+
+    #button.disabled {
+        color: var(--fg2);
     }
 
     #inner {
