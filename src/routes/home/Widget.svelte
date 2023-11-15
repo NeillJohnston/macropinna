@@ -41,10 +41,10 @@
 
     export let name: string;
     export let coords: { x: number, y: number, w: number, h: number };
-    // export let upId: string;
-    // export let downId: string;
-    export let leftId: string;
-    export let rightId: string;
+    export let upId: string | undefined;
+    export let downId: string | undefined;
+    export let leftId: string | undefined;
+    export let rightId: string | undefined;
     // Props are arbitrary data that get passed down to the rendered widget
     export let props: any;
     export let id: string;
@@ -84,6 +84,8 @@
 
     onMount(() => {
         joystick.register(id, {
+            up: { id: upId },
+            down: { id: downId },
             left: { id: leftId },
             right: { id: rightId },
             enter: {

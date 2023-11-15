@@ -6,9 +6,11 @@
 <script lang="ts">
 	import { config, setConfig, type Config } from "$lib/api";
 	import { onMount } from "svelte";
-    import { Direction, joystick, nav } from '$lib/joystick';
+    import { Direction, joystick } from '$lib/joystick';
 	import Screen from '../Screen.svelte';
 	import Widget from "./Widget.svelte";
+	import { minIndexByKey } from "$lib/util";
+	import { widgetNeighborIndex } from "./widgets/widgetMath";
 
     export let goUp: () => void;
     export let goDown: () => void;
@@ -42,7 +44,7 @@
             },
             enter: {
                 keep: true,
-                id: () => screens[index].widgets.length > 0 ? `home/${index}/0` : undefined
+                id: () => screens[index].widgets.length > 0 ? `home/${index}/${entryWidgetIndex(index)}` : undefined
             }
         });
     });
@@ -50,6 +52,23 @@
     const widgetId = (screenIndex: number, widgetIndex: number) => (
         `home/${screenIndex}/${widgetIndex}`
     );
+
+    // First widget you reach when you enter into a screen - defined as the
+    // topmost then leftmost widget
+    const entryWidgetIndex = (screenIndex: number) => (
+        minIndexByKey(screens[screenIndex].widgets, ({ coords }) => (
+            coords.y + coords.x / 100
+        ))
+    );
+
+    const widgetIdByDirection = (screenIndex: number, widgetIndex: number, direction: Direction) => {
+        let index = widgetNeighborIndex(screens[screenIndex].widgets[widgetIndex], screens[screenIndex].widgets, direction);
+        if (index === undefined) {
+            index = widgetIndex;
+        }
+
+        return widgetId(screenIndex, index);
+    }
 
     const widgetPropsSave = (screenIndex: number, widgetIndex: number) => (
         (newProps: any) => {
@@ -87,8 +106,10 @@
                 coords={coords}
                 props={{ ...props }}
                 id={widgetId(screenIndex, widgetIndex)}
-                leftId={widgetId(screenIndex, (widgetIndex - 1 + screen.widgets.length) % screen.widgets.length)}
-                rightId={widgetId(screenIndex, (widgetIndex + 1) % screen.widgets.length)}
+                upId={widgetIdByDirection(screenIndex, widgetIndex, Direction.Up)}
+                downId={widgetIdByDirection(screenIndex, widgetIndex, Direction.Down)}
+                leftId={widgetIdByDirection(screenIndex, widgetIndex, Direction.Left)}
+                rightId={widgetIdByDirection(screenIndex, widgetIndex, Direction.Right)}
                 onScreen={joystick.stack.includes('home') && screenIndex === index}
                 save={widgetPropsSave(index, widgetIndex)}
             />
