@@ -1,11 +1,24 @@
 <script lang="ts">
+	import { joystick, nav } from "$lib/joystick";
 	import type { YAlign } from "$lib/layout";
 	import { invoke } from "@tauri-apps/api";
 	import { onMount } from "svelte";
 
     export let props: {
         yAlign: YAlign;
+        amp: number;
     };
+    export let save: (newProps: any) => void;
+    export let id: string;
+    export const entry = id + '/amp';
+    export const pause = () => {
+        running = false;
+    }
+    export const resume = () => {
+        running = true;
+    }
+
+    $: showMenu = $nav.startsWith(id + '/');
 
     // TODO put all of these params in props
 
@@ -16,6 +29,7 @@
 
     const data = new Array(nBars).fill(0);
     const displayData = new Array(nBars).fill(0);
+    let running = true;
 
     // Exponential time-series smoothing
     const smooth = 0.4;
@@ -27,18 +41,37 @@
     // s.t. clipping is impossible but the height of each bar still looks
     // roughly proportional to its real volume. `amp` can be adjusted to make
     // bars reach the ceiling faster or slower
-    const amp = 4.0;
-    const bar = (x: number) => (1 - 2/(1 + Math.exp(amp*x)));
+    const bar = (x: number) => (1 - 2/(1 + Math.exp(Math.pow(2, props.amp/8) * x)));
 
     // Function that maps proportions of graph to proportion of audio spectrum.
     // Must be monotonic from (0, 0) to (1, 1). Chosen to boost the area taken
     // by lower frequencies a bit
     const a2 = 0.1;
     const a3 = 0.5;
-    const dens = (x: number) => a3*x*x*x + a2*x*x + (1 - a3 - a2)*x;
+    const dens = (x: number) => a3*x*x*x + a2*x*x + (1 - a3 - a2)*x + 0;
 
     onMount(() => {
-        return setInterval(async () => {
+        joystick.register(entry, {
+            up: {
+                keep: true,
+                action: () => {
+                    props.amp += 1;
+                }
+            },
+            down: {
+                keep: true,
+                action: () => {
+                    props.amp -= 1;
+                }
+            },
+            exit: {
+                action: () => save(props)
+            }
+        })
+
+        const interval = setInterval(async () => {
+            if (!running) return;
+
             // TODO wrote this in a rush, needs clean-up
             const res: { data: number[] } = await invoke('get_audio_spectrum');
             const raw = res.data;
@@ -68,6 +101,10 @@
                 displayData[i] = x/af;
             }
         }, 1000/freq);
+
+        return () => {
+            clearInterval(interval);
+        }
     });
 
     const yAlignClass = props.yAlign;
@@ -77,6 +114,11 @@
     {#each displayData as x}
     <div class="bar" style:height={`${100 * bar(x)}%`} />
     {/each}
+    {#if showMenu}
+    <div id="amp">
+        <span>Amp:&nbsp;<span class="mono"><strong>{props.amp > 0 ? '+' : ''}{props.amp}</strong></span></span>
+    </div>
+    {/if}
 </div>
 
 <style>
@@ -84,6 +126,7 @@
         width: 100%;
         height: 100%;
         display: flex;
+        position: relative;
     }
 
     .bar {
@@ -91,6 +134,19 @@
         background: var(--fg);
         margin: 4px;
         transition: height linear 0.033s;
+    }
+
+    #amp {
+        width: 100%;
+        height: 100%;
+        padding: var(--md);
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.5);
+        font-size: var(--f-1);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
     }
 
     /* Y alignment classes */

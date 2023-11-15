@@ -14,13 +14,16 @@ interface Target {
     action?: () => void;
 }
 
-interface Component {
+export interface Component {
     up?: Target;
     down?: Target;
     left?: Target;
     right?: Target;
     enter?: Target;
     exit?: Target;
+    // An HTML id for scrolling - slashes will get automatically escaped.
+    // Technically this can be any CSS selector
+    scrollTo?: string;
 }
 
 export enum Direction {
@@ -69,7 +72,17 @@ class Joystick {
     go(dir: Direction) {
         const shouldUpdate = this._go(dir);
         if (shouldUpdate) {
-            nav.update(() => this.stack[this.stack.length - 1]);
+            const id = this.stack[this.stack.length - 1];
+            nav.update(() => id);
+
+            const scrollSelector = this.components.get(id)?.scrollTo;
+            if (scrollSelector) {
+                const escaped = scrollSelector.replaceAll('/', '\\/').replaceAll(':', '\\:');
+                document.querySelector(escaped)?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
         }
     }
 
@@ -165,3 +178,72 @@ class Joystick {
 }
 
 export const joystick = new Joystick();
+
+// Utility class to create and reference a list of elements that should navigate
+// together like a list
+export class NavList {
+    private list: (string | undefined)[] = [];
+
+    /*
+    Elements is a list of elements that can be navigated through. Each
+    element needs a unique name, and may optionally have a count if there are
+    multiple instances of that element. For example:
+
+        new NavList('myList', [
+            { name: 'foo' },
+            { name: 'bar', count: 3 },
+            { name: 'baz' }
+        ]);
+    
+    Will create a NavList with the following 5 elements:
+
+        myList/foo
+        myList/bar/0
+        myList/bar/1
+        myList/bar/2
+        myList/baz
+    */
+    constructor(
+        private prefix: string,
+        elements: {
+            name: string,
+            count?: number
+        }[]
+    ) {
+        this.list = [undefined];
+
+        for (const { name, count } of elements) {
+            if (count) {
+                for (let index = 0; index < count; ++index) {
+                    this.list.push(this.id(name, index));
+                }
+            }
+            else {
+                this.list.push(this.id(name));
+            }
+        }
+
+        this.list.push(undefined);
+    }
+
+    private id(name: string, index?: number) {
+        if (index === undefined) {
+            return `${this.prefix}/${name}`;
+        }
+        else {
+            return `${this.prefix}/${name}/${index}`;
+        }
+    }
+
+    // Get the id, and prev/next (up/down) elements from the list
+    get(name: string, index?: number): { id: string, up?: string, down?: string } {
+        const id = this.id(name, index);
+        const listIndex = this.list.indexOf(id);
+
+        return {
+            id,
+            up: this.list[listIndex - 1],
+            down: this.list[listIndex + 1]
+        };
+    }
+}

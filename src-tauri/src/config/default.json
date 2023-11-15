@@ -13,6 +13,7 @@
                 "y": 0
               },
               "props": {
+                "format": "%A, %b %e%n%l:%M%P",
                 "xAlign": "right",
                 "yAlign": "top"
               }
@@ -26,6 +27,12 @@
                 "y": 8
               },
               "props": {
+                "heading": "current",
+                "subheadings": [
+                  "sunset",                                                                                                                                                     
+                  "forecast3hr",
+                  "forecast6hr"
+                ],
                 "xAlign": "left",
                 "yAlign": "top"
               }
@@ -43,7 +50,8 @@
                 "y": 3
               },
               "props": {
-                "yAlign": "top"
+                "yAlign": "top",
+                "amp": 0
               }
             },
             {

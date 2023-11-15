@@ -17,16 +17,23 @@
 
     Widgets *can* have the following exports:
     - An `export let props: ...;`
+    - An `export let save: (newProps: any) => void;`
     - An `export let id: string;`
-    - An `export const entry = id + ...`.
+    - An `export const entry = id + ...;`
+    - An `export const pause = () => { ... };`
+    - An `export const resume = () => { ... };`
     
     Props allow widgets to receive data from config - if a widget doesn't need
-    to receive anything from config, this can be safely omitted.
+    to receive anything from config, this can be safely omitted. Props can be
+    saved to the current config with the save function.
     
     Id and entry enable navigation for a widget - in particular, when a widget
     is mounted, navigating into the widget will push whatever is defined in
     entry to the nav stack. If a widget does not wish to enable navigation, then
     this should be omitted.
+
+    Pause and resume are callbacks that are triggered when the widget exits/
+    enters the screen.
 
     It's best for entry to include id as a prefix, so that multiple instances of
     the same widget have separate navigation.
@@ -34,13 +41,24 @@
 
     export let name: string;
     export let coords: { x: number, y: number, w: number, h: number };
-    // export let upId: string;
-    // export let downId: string;
-    export let leftId: string;
-    export let rightId: string;
+    export let upId: string | undefined;
+    export let downId: string | undefined;
+    export let leftId: string | undefined;
+    export let rightId: string | undefined;
     // Props are arbitrary data that get passed down to the rendered widget
     export let props: any;
     export let id: string;
+    export let onScreen: boolean;
+    export let save: (props: any) => void;
+
+    $: {
+        if (onScreen && widget?.resume) {
+            widget.resume();
+        }
+        else if (!onScreen && widget?.pause) {
+            widget.pause();
+        }
+    }
 
     // Forcing widget to be an `any` to prevent typechecking errors on props
     const widgetConstructor: any = {
@@ -66,6 +84,8 @@
 
     onMount(() => {
         joystick.register(id, {
+            up: { id: upId },
+            down: { id: downId },
             left: { id: leftId },
             right: { id: rightId },
             enter: {
@@ -82,6 +102,7 @@
         this={widgetConstructor}
         bind:this={widget}
         props={props}
+        save={save}
         id={id}
     />
 </div>
