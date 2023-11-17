@@ -41,8 +41,6 @@
     }
 
     onMount(() => {
-        joystick.set(['home']);
-
         document.addEventListener('keydown', handleRouting);
 
         document.addEventListener('mousemove', () => {

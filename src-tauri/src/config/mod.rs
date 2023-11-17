@@ -188,7 +188,8 @@ pub struct ConfigV1 {
     pub shell: Option<String>,
     pub weather: Option<Weather>,
     pub audio_device: Option<AudioDevice>,
-    pub remote_server: RemoteServer
+    pub remote_server: RemoteServer,
+    pub needs_setup: Option<bool>
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

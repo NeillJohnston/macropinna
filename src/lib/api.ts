@@ -37,6 +37,7 @@ export interface Config {
     remote_server: {
         port: number;
     };
+    needs_setup?: boolean;
 }
 
 interface ConfigEvent {
