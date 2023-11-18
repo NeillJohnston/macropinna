@@ -22,6 +22,11 @@
             screen: Welcome,
             prevId: undefined,
             nextId: 'location'
+        },
+        {
+            screen: Location,
+            prevId: 'welcome',
+            nextId: undefined
         }
     ];
     let index = -1;
@@ -52,12 +57,10 @@
         }, SCREEN_ANIM_MS);
     };
 
-    let newConfig: Config;
+    $: newConfig = structuredClone($config);
 
     onMount(() => {
         joystick.set(['welcome']);
-
-        newConfig = structuredClone($config);
 
         setTimeout(() => {
             setIndex(0);

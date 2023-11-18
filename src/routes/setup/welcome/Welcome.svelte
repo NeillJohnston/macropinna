@@ -8,10 +8,6 @@
 
     const nameInputId = 'welcome';
     const continueButtonId = 'welcome/continue';
-
-    onMount(() => {
-        console.log(props.config.name);
-    });
 </script>
 
 <script context="module">
