@@ -16,6 +16,7 @@ Macropinna is in active development and has not yet had a first release. If you 
 
 This project's development environment depends on **Tauri** and **npm**:
 - [**Tauri** setup](https://tauri.app/v1/guides/getting-started/prerequisites)
+    - [**Tauri CLI**](https://tauri.app/v1/guides/faq#node-or-cargo): there are 2 ways to install the CLI, through Cargo or npm. Commands in this readme are written for a Cargo installation (e.g. `cargo tauri dev`), but you can use the npm version as well.
 - [**npm** setup](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 
 **Platform-specific**: [cpal](https://crates.io/crates/cpal) requires ALSA dev files - install `libasound2-dev` on Debian/Ubuntu and `alsa-lib-devel` on Fedora.
