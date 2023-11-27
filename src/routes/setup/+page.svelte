@@ -9,11 +9,13 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { joystick } from "$lib/joystick";
-    import Welcome from "./welcome/Welcome.svelte";
-	import Localization from "./localization/Localization.svelte";
 	import type { Config } from "$lib/api";
     import { config } from "$lib/api";
+    import Welcome from "./welcome/Welcome.svelte";
 	import Location from "./location/Location.svelte";
+	import Localization from "./localization/Localization.svelte";
+	import Finish from "./Finish.svelte";
+	import FirstRemote from "./firstRemote/FirstRemote.svelte";
 
     const SCREEN_ANIM_MS = 1600;
 
@@ -21,16 +23,31 @@
         {
             screen: Welcome,
             prevId: undefined,
+            nextId: 'first-remote'
+        },
+        {
+            screen: FirstRemote,
+            prevId: 'welcome',
             nextId: 'location'
         },
         {
             screen: Location,
-            prevId: 'welcome',
+            prevId: 'first-remote',
+            nextId: 'localization'
+        },
+        {
+            screen: Localization,
+            prevId: 'location',
+            nextId: 'finish'
+        },
+        {
+            screen: Finish,
+            prevId: 'localization',
             nextId: undefined
         }
     ];
     let index = -1;
-    $: scrollbarHeight = `${100 * (index + 1) / screens.length}%`;
+    $: scrollbarHeight = `${100 * index / (screens.length - 1)}%`;
 
     let prevIndex = -1;
     let animTimeout = 0;

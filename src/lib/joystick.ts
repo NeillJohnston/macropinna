@@ -61,6 +61,7 @@ class Joystick {
     setTop(id: string) {
         this.stack.pop();
         this.stack.push(id);
+        nav.update(() => id);
     }
 
     // Register a new navigable component
@@ -103,6 +104,7 @@ class Joystick {
     // Push onto the navigation stack, as if a component was just entered.
     push(id: string) {
         this.stack.push(id);
+        nav.update(() => id);
     }
 
     // Standard id for a focusable input

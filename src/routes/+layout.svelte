@@ -30,6 +30,9 @@
             case ' ':
                 dir = Direction.Enter;
                 break;
+            case 'Enter':
+                dir = Direction.Enter;
+                break;
             case 'Escape':
                 dir = Direction.Exit;
                 break;

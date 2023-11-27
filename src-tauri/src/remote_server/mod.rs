@@ -158,7 +158,7 @@ impl ServerState {
         );
     }
 
-    /// Remote an active conncetion
+    /// Remove an active conncetion
     fn remove_active(&self, uuid: &Uuid) {
         { // Lock for active_map
             let mut active_map = self.active_map.lock().unwrap();
