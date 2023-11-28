@@ -17,7 +17,7 @@
 	import Finish from "./Finish.svelte";
 	import FirstRemote from "./firstRemote/FirstRemote.svelte";
 
-    const SCREEN_ANIM_MS = 1600;
+    const SCREEN_ANIM_MS = 800;
 
     const screens = [
         {
@@ -132,7 +132,7 @@
         padding: var(--md);
         padding-left: var(--lg);
         padding-right: var(--xl);
-        transition: top cubic-bezier(0.2, 1, 0.4, 1) 1.6s;
+        transition: top cubic-bezier(0.2, 1, 0.4, 1) 0.8s;
     }
 
     #dim-top {

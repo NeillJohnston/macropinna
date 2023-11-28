@@ -8,6 +8,15 @@
 
     const nameInputId = 'welcome';
     const continueButtonId = 'welcome/continue';
+
+    let nameValue = '';
+    onMount(() => {
+        nameValue = props.config.name;
+    });
+
+    const saveAndContinue = () => {
+        props.next();
+    }
 </script>
 
 <script context="module">
@@ -21,7 +30,7 @@
         component={{
             down: { id: continueButtonId }
         }}
-        bind:value={props.config.name}
+        bind:value={nameValue}
         placeholder={'What should I call you?'}
     />
 </div>
@@ -30,7 +39,7 @@
     component={{
         up: { id: nameInputId }
     }}
-    onPress={props.next}
+    onPress={saveAndContinue}
 />
 
 <style>

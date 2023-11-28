@@ -8,6 +8,7 @@
 	import ContinueButton from "../ContinueButton.svelte";
 	import { getRemoteServerIp } from "$lib/api";
 	import Button from "../../ui/Button.svelte";
+	import RevertButton from "../RevertButton.svelte";
 
     export let props: ScreenProps;
 
@@ -15,14 +16,18 @@
     const latInputId = 'location/lat';
     const longInputId = 'location/long';
     const continueButtonId = 'location/continue';
+    const revertButtonId = 'location/revert';
 
     let latValue = '';
     let longValue = '';
     onMount(() => {
+        reset();
+    });
+
+    const reset = () => {
         latValue = props.config.weather?.lat.toString() ?? '';
         longValue = props.config.weather?.long.toString() ?? '';
-
-    });
+    };
 
     let fetchLocState: 'fetching' | 'ok' | 'err' = 'ok';
 
@@ -79,41 +84,48 @@
     }
 
     const saveAndContinue = () => {
-        // TODO
+        // TODO lat/long will eventually be moved
+        if (props.config.weather) {
+            props.config.weather.lat = parseFloat(latValue);
+            props.config.weather.long = parseFloat(longValue);
+        }
         props.next();
     };
 </script>
 
 <div id="location">
-    <div id="map-container">
-        <!-- Three copies of the map - one for the display, and one for each of the left/right edges -->
-        <img
-            src="/map.svg"
-            alt="World map"
-            style:height={`${mapHeightPx}px`}
-            style:width={`${mapWidthPx}px`}
-            style:top={`calc(50% - ${mapYPx}px)`}
-            style:left={`calc(50% - ${mapXPx}px)`}
-        />
-        <img
-            src="/map.svg"
-            alt="World map (copy)"
-            style:height={`${mapHeightPx}px`}
-            style:width={`${mapWidthPx}px`}
-            style:top={`calc(50% - ${mapYPx}px)`}
-            style:left={`calc(50% - ${mapXPx - mapWidthPx}px)`}
-        />
-        <img
-            src="/map.svg"
-            alt="World map (copy) (copy)"
-            style:height={`${mapHeightPx}px`}
-            style:width={`${mapWidthPx}px`}
-            style:top={`calc(50% - ${mapYPx}px)`}
-            style:left={`calc(50% - ${mapXPx + mapWidthPx}px)`}
-        />
-        <div id="pin">
-            <Icon icon='map:map-pin' />
+    <div id="map-height-container">
+        <div id="map-container">
+            <!-- Three copies of the map - one for the display, and one for each of the left/right edges -->
+            <img
+                src="/map.svg"
+                alt="World map"
+                style:height={`${mapHeightPx}px`}
+                style:width={`${mapWidthPx}px`}
+                style:top={`calc(50% - ${mapYPx}px)`}
+                style:left={`calc(50% - ${mapXPx}px)`}
+            />
+            <img
+                src="/map.svg"
+                alt="World map (copy)"
+                style:height={`${mapHeightPx}px`}
+                style:width={`${mapWidthPx}px`}
+                style:top={`calc(50% - ${mapYPx}px)`}
+                style:left={`calc(50% - ${mapXPx - mapWidthPx}px)`}
+            />
+            <img
+                src="/map.svg"
+                alt="World map (copy) (copy)"
+                style:height={`${mapHeightPx}px`}
+                style:width={`${mapWidthPx}px`}
+                style:top={`calc(50% - ${mapYPx}px)`}
+                style:left={`calc(50% - ${mapXPx + mapWidthPx}px)`}
+            />
+            <div id="pin">
+                <Icon icon='map:map-pin' />
+            </div>
         </div>
+        <div id="revert-spacer" />
     </div>
     <div id="menu-container">
         <MenuSection label='Location'>
@@ -161,10 +173,19 @@
             />
         </MenuSection>
     </div>
+    <RevertButton
+        id={revertButtonId}
+        component={{
+            up: { id: longInputId },
+            right: { id: continueButtonId }
+        }}
+        onPress={reset}
+    />
     <ContinueButton
         id={continueButtonId}
         component={{
-            up: { id: longInputId }
+            up: { id: longInputId },
+            left: { id: revertButtonId }
         }}
         onPress={saveAndContinue}
     />
@@ -177,9 +198,20 @@
         display: flex;
     }
 
-    #map-container {
+    #map-height-container {
         width: 50%;
         height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #revert-spacer {
+        height: 2em;
+    }
+
+    #map-container {
+        width: 100%;
+        flex: 1;
         border: 1px solid var(--fg);
         overflow: hidden;
         position: relative;

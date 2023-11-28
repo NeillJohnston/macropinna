@@ -77,7 +77,7 @@
     </div>
     <div id="connected-list">
         {#if activeList.length === 0}
-        <p class="small"><em>No connected devices - scan the QR code to start adding your device as a remote!</em></p>
+        <p class="small"><em>Macropinna is best with a remote - scan the QR code to add your device!</em></p>
         {:else}
         <MenuSection label='Connected devices'>
             {#each activeList as active}
