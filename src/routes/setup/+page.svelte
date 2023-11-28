@@ -12,10 +12,11 @@
 	import type { Config } from "$lib/api";
     import { config } from "$lib/api";
     import Welcome from "./welcome/Welcome.svelte";
+	import FirstRemote from "./firstRemote/FirstRemote.svelte";
+    import Theme from "./theme/Theme.svelte";
 	import Location from "./location/Location.svelte";
 	import Localization from "./localization/Localization.svelte";
 	import Finish from "./Finish.svelte";
-	import FirstRemote from "./firstRemote/FirstRemote.svelte";
 
     const SCREEN_ANIM_MS = 800;
 
@@ -28,11 +29,16 @@
         {
             screen: FirstRemote,
             prevId: 'welcome',
+            nextId: 'theme'
+        },
+        {
+            screen: Theme,
+            prevId: 'first-remote',
             nextId: 'location'
         },
         {
             screen: Location,
-            prevId: 'first-remote',
+            prevId: 'theme',
             nextId: 'localization'
         },
         {
@@ -140,7 +146,8 @@
         top: 0;
         width: 100%;
         height: var(--md);
-        background: linear-gradient(to bottom, var(--bg), rgb(0, 0, 0, 0));
+        /* Note: some CSS magic here https://stackoverflow.com/a/71098929 */
+        background: linear-gradient(to bottom, var(--bg), color-mix(in srgb, var(--bg) 0.01%, transparent));
         z-index: 1;
     }
 
@@ -149,7 +156,7 @@
         bottom: 0;
         width: 100%;
         height: var(--md);
-        background: linear-gradient(to top, var(--bg), rgb(0, 0, 0, 0));
+        background: linear-gradient(to top, var(--bg), color-mix(in srgb, var(--bg) 0.01%, transparent));
         z-index: 1;
     }
 

@@ -97,7 +97,7 @@
     }
 
     .mono {
-        font-family: 'IBM Plex Mono';
+        font-family: var(--code);
     }
 
     :root {
@@ -143,5 +143,6 @@
         height: 100%;
         background-color: var(--bg);
         outline: none;
+        font-size: var(--f0);
     }
 </style>
