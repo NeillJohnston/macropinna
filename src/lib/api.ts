@@ -71,15 +71,19 @@ export const setConfig = async (newConfig: Config) => {
     await invoke('set_config', { newConfig });
 }
 
+export type Agent = 'Android' | 'IPhone' | 'Desktop' | 'Unknown';
+
 export interface AccessInfo {
     uuid: string;
     name: string;
+    agent: Agent;
     code: string;
 }
 
 export interface ActiveInfo {
     uuid: string;
     name: string;
+    agent: Agent;
 }
 
 export type RemoteServerEvent = 'RefreshPending' | 'RefreshActive' | {

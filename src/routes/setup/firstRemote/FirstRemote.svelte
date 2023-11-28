@@ -12,6 +12,7 @@
 	import Button from "../../ui/Button.svelte";
 	import { invoke } from "@tauri-apps/api";
 	import Icon from "@iconify/svelte";
+	import DeviceName from "../../ui/DeviceName.svelte";
 
     export let props: ScreenProps;
 
@@ -80,7 +81,7 @@
         {:else}
         <MenuSection label='Connected devices'>
             {#each activeList as active}
-            <p>{active.name}</p>
+            <p><DeviceName name={active.name} agent={active.agent} /></p>
             {/each}
         </MenuSection>
         {/if}
@@ -95,7 +96,9 @@
 />
 <CardModal idPrefix='first-remote/modal:' center>
     <div id="content">
-        <p>Connect <strong>{device?.name}</strong> by typing the code shown on its screen.</p>
+        {#if device}
+        <p>Connect <strong><DeviceName name={device.name} agent={device.agent} /></strong> by typing the code shown on its screen.</p>
+        {/if}
         <CodeInput
             code={device?.code ?? '?'}
             component={{

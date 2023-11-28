@@ -1,8 +1,10 @@
 <script lang="ts">
+	import type { Component } from "$lib/joystick";
 	import KeyboardInput from "../ui/KeyboardInput.svelte";
 	import NavLabel from "../ui/NavLabel.svelte";
 
     export let code: string;
+    export let component: Component;
     export let onMatch: () => void;
 
     let value = '';
@@ -21,6 +23,7 @@
     <NavLabel id='remotes/modal:code'>
         <KeyboardInput
             id='remotes/modal:code'
+            component={component}
             bind:value
             validate={validate}
         />
