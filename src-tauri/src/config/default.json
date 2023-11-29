@@ -99,10 +99,11 @@
     "weather": {
       "provider": "OpenWeatherMap",
       "api_key": "d873eedb795dd1cf5b14cb66f25c7a00",
-      "lat": 29.65,
-      "long": -82.32
+      "lat": 0,
+      "long": 0
     },
     "remote_server": {
       "port": 5174
-    }
+    },
+    "needs_setup": true
   }
