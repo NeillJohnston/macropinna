@@ -225,6 +225,7 @@ pub struct Launcher {
     pub finder: String,
     pub finder_is_regex: Option<bool>,
     pub image_path: Option<String>,
+    pub css_background: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

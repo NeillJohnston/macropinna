@@ -17,6 +17,7 @@
 	import Location from "./location/Location.svelte";
 	import Localization from "./localization/Localization.svelte";
 	import Finish from "./Finish.svelte";
+	import SuggestLaunchers from "./suggestLaunchers/SuggestLaunchers.svelte";
 
     const SCREEN_ANIM_MS = 800;
 
@@ -44,11 +45,16 @@
         {
             screen: Localization,
             prevId: 'location',
+            nextId: 'suggest-launchers'
+        },
+        {
+            screen: SuggestLaunchers,
+            prevId: 'localization',
             nextId: 'finish'
         },
         {
             screen: Finish,
-            prevId: 'localization',
+            prevId: 'suggest-launchers',
             nextId: undefined
         }
     ];

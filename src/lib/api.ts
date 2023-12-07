@@ -2,6 +2,15 @@ import { invoke } from "@tauri-apps/api";
 import { listen, type Event } from "@tauri-apps/api/event";
 import { get, writable } from "svelte/store";
 
+export interface Launcher {
+    name: string;
+    command: string;
+    finder: string;
+    finder_is_regex?: boolean;
+    image_path?: string;
+    css_background?: string;
+};
+
 export interface Config {
     name: string;
     home: {
@@ -18,13 +27,7 @@ export interface Config {
             }[];
         }[];
     };
-    launchers: {
-        name: string;
-        command: string;
-        finder: string;
-        finder_is_regex?: boolean;
-        image_path?: string;
-    }[];
+    launchers: Launcher[];
     weather?: {
         provider: 'OpenWeatherMap',
         api_key: string;
