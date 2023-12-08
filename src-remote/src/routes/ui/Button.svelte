@@ -1,6 +1,7 @@
 <script lang="ts">
     export let onClick: () => void;
     export let display = 'inline';
+    export let noBlur = false;
 </script>
 
 <div
@@ -8,7 +9,9 @@
     style:display={display}
     on:click={onClick}
     on:keypress={onClick}
-    role="button" tabindex="0"
+    role="button"
+    tabindex="0"
+    on:mousedown={noBlur ? ((event) => { event.preventDefault(); }) : undefined }
 >
     <slot />
 </div>

@@ -5,7 +5,7 @@
 
     let value = '';
     let placeholder = '';
-    let mode: 'buffered' | 'immediate' = 'buffered';
+    let mode: 'buffered' | 'immediate' = 'immediate';
 
     const pushPlaceholder = (pushed: string) => {
         placeholder += pushed;
@@ -13,8 +13,6 @@
             placeholder = placeholder.slice(pushed.length);
         }, 800);
     }
-
-    let p = '';
 
     const sendImmediate = () => {
         $connection?.send({ Text: value });
@@ -68,8 +66,8 @@
 <div id="keyboard">
     <!-- Not using the UI TextInput because this might require special styling/
     features that don't need to be supported there -->
-    <Button onClick={switchMode} >
-        <div id="mode-width">
+    <Button onClick={switchMode}>
+        <div class="button">
             <Icon icon={{
                 buffered: 'carbon:return',
                 immediate: 'carbon:arrow-right'
@@ -89,7 +87,6 @@
         </form>
         {:else if mode === 'immediate'}
         <input
-            type="password"
             bind:value
             on:input={onInput}
             on:keydown={onKey}
@@ -99,17 +96,11 @@
     </div>
     {#if mode === 'immediate'}
     <!-- Prevents this button from blurring the input -->
-    <div
-        on:mousedown={(event) => { event.preventDefault(); }}
-        role="button"
-        tabindex="0"
-    >
-        <Button onClick={sendBackspace} >
-            <div id="mode-width">
-                <Icon icon='carbon:delete' inline />
-            </div>
-        </Button>
-    </div>
+    <Button onClick={sendBackspace} noBlur>
+        <div class="button">
+            <Icon icon='carbon:delete' inline />
+        </div>
+    </Button>
     {/if}
 </div>
 
@@ -131,9 +122,10 @@
         flex: 1;
     }
 
-    #mode-width {
-        width: calc(1em + 4px);
-        text-align: center;
+    .button {
+        padding-left: 4px;
+        padding-right: 4px;
+        display: inline;
     }
 
     input {
