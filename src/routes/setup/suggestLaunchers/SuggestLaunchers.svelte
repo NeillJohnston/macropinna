@@ -151,9 +151,12 @@
     #suggest-launchers {
         width: 100%;
         height: 100%;
+        box-sizing: border-box;
         font-size: var(--f0);
         overflow-y: scroll;
         padding-right: var(--md);
+        /* Space for the continue button on the button */
+        padding-bottom: 2em;
     }
 
     #no-suggestions {
