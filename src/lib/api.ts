@@ -13,6 +13,10 @@ export interface Launcher {
 
 export interface Config {
     name: string;
+    theme: {
+        color: string;
+        style: string;
+    };
     home: {
         screens: {
             widgets: {
@@ -52,6 +56,10 @@ interface ConfigEvent {
 // Providing a minimal config for typing purposes
 export const config = writable<Config>({
     name: '',
+    theme: {
+        color: '',
+        style: ''
+    },
     launchers: [],
     home: {
         screens: []

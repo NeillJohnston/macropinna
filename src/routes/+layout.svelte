@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { listenConfig } from '$lib/api';
+	import { config, listenConfig } from '$lib/api';
     import { Direction, joystick, nav } from '$lib/joystick';
+	import { colorThemes, setColorTheme, setStyleTheme, styleThemes } from '$lib/themes';
 	import { onMount } from 'svelte';
 
     const hideCursorAfterMs = 3000;
@@ -41,7 +42,7 @@
         }
 
         joystick.go(dir);
-    }
+    };
 
     onMount(() => {
         document.addEventListener('keydown', handleRouting);
@@ -60,10 +61,41 @@
 
         listenConfig();
 
+        reloadColorTheme();
+        reloadStyleTheme();
+
         return () => {
             document.removeEventListener('keydown', handleRouting);
         }
-    })
+    });
+
+    const reloadColorTheme = () => {
+        const theme = colorThemes.find(theme => (
+            theme.name === $config.theme.color
+        ));
+
+        if (theme) {
+            setColorTheme(theme);
+        }
+    }
+
+    const reloadStyleTheme = () => {
+        const theme = styleThemes.find(theme => (
+            theme.name === $config.theme.style
+        ));
+
+        if (theme) {
+            setStyleTheme(theme);
+        }
+    }
+
+    $: {
+        $config.theme.color && reloadColorTheme();
+    }
+
+    $: {
+        $config.theme.style && reloadStyleTheme();
+    }
 </script>
 
 <div

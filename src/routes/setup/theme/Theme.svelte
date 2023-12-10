@@ -15,23 +15,36 @@
 
     let colorSelectorIndex = 0;
     let styleSelectorIndex = 0;
-    $: currentColorTheme = colorThemes[colorSelectorIndex];
-    $: currentStyleTheme = styleThemes[styleSelectorIndex];
     onMount(() => {
         reset();
     });
 
-    const colorSelectorValues = colorThemes.map(() => '');
-    const styleSelectorValues = styleThemes.map(() => '');
+    const colorSelectorValues = colorThemes.map(theme => theme.name);
+    const styleSelectorValues = styleThemes.map(theme => theme.name);
 
     const reset = () => {
-        // TODO
-        colorSelectorIndex = 0;
-        styleSelectorIndex = 0;
+        colorSelectorIndex = colorThemes.findIndex(theme => (
+            theme.name === props.config.theme.color
+        ));
+        styleSelectorIndex = styleThemes.findIndex(theme => (
+            theme.name === props.config.theme.style
+        ));
+
+        if (colorSelectorIndex === -1) {
+            colorSelectorIndex = 0;
+        }
+        if (styleSelectorIndex === -1) {
+            styleSelectorIndex = 0;
+        }
+
+        changeColorTheme(colorSelectorIndex);
+        changeStyleTheme(styleSelectorIndex);
     };
 
     const saveAndContinue = () => {
-        // TODO;
+        props.config.theme.color = colorThemes[colorSelectorIndex].name;
+        props.config.theme.style = styleThemes[styleSelectorIndex].name;
+
         props.next();
     };
 
@@ -54,10 +67,7 @@
         bind:index={colorSelectorIndex}
         values={colorSelectorValues}
         onChange={changeColorTheme}
-        custom
-    >
-        {currentColorTheme.name}
-    </CarouselSelector>
+    />
     <div class="space" />
     <CarouselSelector
         id={styleSelectorId}
@@ -68,10 +78,7 @@
         bind:index={styleSelectorIndex}
         values={styleSelectorValues}
         onChange={changeStyleTheme}
-        custom
-    >
-        {currentStyleTheme.name}
-    </CarouselSelector>
+    />
 </div>
 <RevertButton
     id={revertButtonId}

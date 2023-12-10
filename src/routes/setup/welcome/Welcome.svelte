@@ -15,6 +15,8 @@
     });
 
     const saveAndContinue = () => {
+        props.config.name = nameValue;
+        
         props.next();
     }
 </script>
