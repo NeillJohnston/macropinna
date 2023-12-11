@@ -183,12 +183,20 @@ impl<'a> VersionedDeserialize<'a> for () {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ConfigV1 {
     pub name: String,
+    pub theme: Theme,
     pub home: Home,
     pub launchers: Vec<Launcher>,
     pub shell: Option<String>,
     pub weather: Option<Weather>,
     pub audio_device: Option<AudioDevice>,
-    pub remote_server: RemoteServer
+    pub remote_server: RemoteServer,
+    pub needs_setup: Option<bool>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Theme {
+    color: String,
+    style: String
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -224,6 +232,7 @@ pub struct Launcher {
     pub finder: String,
     pub finder_is_regex: Option<bool>,
     pub image_path: Option<String>,
+    pub css_background: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

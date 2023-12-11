@@ -1,7 +1,7 @@
 <script lang="ts">
+	import KeyboardInput from "../../ui/KeyboardInput.svelte";
+	import NavLabel from "../../ui/NavLabel.svelte";
 	import type { Component } from "$lib/joystick";
-	import KeyboardInput from "../ui/KeyboardInput.svelte";
-	import NavLabel from "../ui/NavLabel.svelte";
 
     export let code: string;
     export let component: Component;
@@ -16,13 +16,13 @@
             onMatch();
         }
         return true;
-    }
+    };
 </script>
 
 <div id="code-input" class='mono'>
-    <NavLabel id='remotes/modal:code'>
+    <NavLabel id='first-remote/modal:code'>
         <KeyboardInput
-            id='remotes/modal:code'
+            id='first-remote/modal:code'
             component={component}
             bind:value
             validate={validate}

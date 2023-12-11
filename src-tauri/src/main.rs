@@ -9,6 +9,7 @@ use tauri::{AppHandle, Wry, Manager};
 mod audio_visualizer;
 mod config;
 mod launcher;
+mod suggest_launchers;
 mod media_player;
 mod remote_server;
 mod weather;
@@ -112,6 +113,7 @@ async fn main() -> anyhow::Result<()> {
             config::get_config,
             config::set_config,
             launcher::launch,
+            suggest_launchers::suggest_launchers,
             weather::get_weather,
             audio_visualizer::get_audio_spectrum,
             audio_visualizer::pause_audio_visualizer,

@@ -61,6 +61,7 @@ class Joystick {
     setTop(id: string) {
         this.stack.pop();
         this.stack.push(id);
+        nav.update(() => id);
     }
 
     // Register a new navigable component
@@ -103,6 +104,7 @@ class Joystick {
     // Push onto the navigation stack, as if a component was just entered.
     push(id: string) {
         this.stack.push(id);
+        nav.update(() => id);
     }
 
     // Standard id for a focusable input
@@ -187,36 +189,44 @@ export class NavList {
     /*
     Elements is a list of elements that can be navigated through. Each
     element needs a unique name, and may optionally have a count if there are
-    multiple instances of that element. For example:
+    multiple instances of that element. You can also add an id directly, useful
+    in cases where you need a known id to be part of the navigation list.
+    For example:
 
         new NavList('myList', [
             { name: 'foo' },
             { name: 'bar', count: 3 },
-            { name: 'baz' }
+            { name: 'baz' },
+            { name: 'just-buzz', isId: true }
         ]);
     
-    Will create a NavList with the following 5 elements:
+    Will create a NavList with the following 6 elements:
 
         myList/foo
         myList/bar/0
         myList/bar/1
         myList/bar/2
         myList/baz
+        just-buzz
     */
     constructor(
         private prefix: string,
         elements: {
             name: string,
-            count?: number
+            count?: number,
+            isId?: boolean
         }[]
     ) {
         this.list = [undefined];
 
-        for (const { name, count } of elements) {
-            if (count) {
+        for (const { name, count, isId } of elements) {
+            if (count !== undefined) {
                 for (let index = 0; index < count; ++index) {
                     this.list.push(this.id(name, index));
                 }
+            }
+            else if (isId) {
+                this.list.push(name);
             }
             else {
                 this.list.push(this.id(name));
@@ -242,6 +252,16 @@ export class NavList {
 
         return {
             id,
+            up: this.list[listIndex - 1],
+            down: this.list[listIndex + 1]
+        };
+    }
+
+    // Get the prev/next elements of an element with a known id
+    getById(id: string): { up?: string, down?: string } {
+        const listIndex = this.list.indexOf(id);
+
+        return {
             up: this.list[listIndex - 1],
             down: this.list[listIndex + 1]
         };

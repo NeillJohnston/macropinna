@@ -54,7 +54,37 @@ struct ServerState {
 pub struct AccessInfo {
     uuid: Uuid,
     name: String,
+    agent: Agent,
     code: String
+}
+
+/// Types of user agents (guessed based on User-Agent header - not a security thing)
+#[derive(Clone, Serialize, Deserialize)]
+pub enum Agent {
+    Android,
+    IPhone,
+    Desktop,
+    Unknown
+}
+
+impl From<String> for Agent {
+    fn from(value: String) -> Self {
+        // Why not add a library to parse user agent strings? It just doesn't
+        // feel necessary, this is intended to be a fun little extra bit of info
+        // to display, and I don't care too much about accuracy
+        if value.contains("Android") {
+            Agent::Android
+        }
+        else if value.contains("iPhone") {
+            Agent::IPhone
+        }
+        else if value.contains("Windows") || value.contains("Macintosh") || value.contains("X11") {
+            Agent::Desktop
+        }
+        else {
+            Agent::Unknown
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -78,7 +108,7 @@ struct AccessPending {
 pub struct ActiveInfo {
     uuid: Uuid,
     name: String,
-    // TODO other stuff from claims
+    agent: Agent
 }
 
 struct Active {
@@ -88,11 +118,11 @@ struct Active {
 
 impl ServerState {
     /// Add an initial connection
-    fn add_init(&self, uuid: Uuid, name: String, code: String) {
+    fn add_init(&self, uuid: Uuid, name: String, agent: Agent, code: String) {
         let mut init_map = self.init_map.lock().unwrap();
 
         init_map.insert(uuid.clone(), AccessInit {
-            info: AccessInfo { uuid, name, code },
+            info: AccessInfo { uuid, name, agent, code },
         });
     }
 
@@ -138,7 +168,8 @@ impl ServerState {
     fn add_active(&self, claims: ActiveDeviceClaims, send: SplitSink<ws::WebSocket, ws::Message>) {
         let info = ActiveInfo {
             uuid: claims.sub,
-            name: claims.name
+            name: claims.name,
+            agent: claims.agent
         };
 
         { // Lock for active_map
@@ -158,7 +189,7 @@ impl ServerState {
         );
     }
 
-    /// Remote an active conncetion
+    /// Remove an active conncetion
     fn remove_active(&self, uuid: &Uuid) {
         { // Lock for active_map
             let mut active_map = self.active_map.lock().unwrap();
@@ -197,6 +228,7 @@ struct ActiveDeviceClaims {
     iss: String,
     sub: Uuid,
     name: String,
+    agent: Agent,
 }
 
 impl ActiveDeviceClaims {
@@ -204,7 +236,8 @@ impl ActiveDeviceClaims {
         ActiveDeviceClaims {
             iss: "macropinna".to_string(),
             sub: info.uuid,
-            name: info.name
+            name: info.name,
+            agent: info.agent
         }
     }
 }
@@ -310,6 +343,7 @@ fn spawn_server(state: Arc<ServerState>) {
 
         let register = warp::path!("api" / "register")
             .and(warp::post())
+            .and(warp::header("User-Agent"))
             .and(warp::body::json::<RegisterRequest>())
             .and(with_state(state.clone()))
             .map(handle_register);
@@ -342,13 +376,13 @@ fn with_state(server: Arc<ServerState>) -> impl Filter<Extract = (Arc<ServerStat
     warp::any().map(move || server.clone())
 }
 
-fn handle_register(req: RegisterRequest, state: Arc<ServerState>) -> impl Reply {
+fn handle_register(user_agent: String, req: RegisterRequest, state: Arc<ServerState>) -> impl Reply {
     let uuid = Uuid::new_v4();
     // Code is generated as the low 8 digits of a uuid, presumably random enough
     let code = Uuid::new_v4().as_u128() % 1_0000_0000;
     let code = format!("{:08}", code);
 
-    state.add_init(uuid.clone(), req.device_name, code.clone());
+    state.add_init(uuid.clone(), req.device_name, user_agent.into(), code.clone());
 
     warp::reply::json(&RegisterResponse { uuid, code })
 }

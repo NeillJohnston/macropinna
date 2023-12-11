@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { listenConfig } from '$lib/api';
+	import { config, listenConfig } from '$lib/api';
     import { Direction, joystick, nav } from '$lib/joystick';
+	import { colorThemes, setColorTheme, setStyleTheme, styleThemes } from '$lib/themes';
 	import { onMount } from 'svelte';
 
     const hideCursorAfterMs = 3000;
@@ -30,6 +31,9 @@
             case ' ':
                 dir = Direction.Enter;
                 break;
+            case 'Enter':
+                dir = Direction.Enter;
+                break;
             case 'Escape':
                 dir = Direction.Exit;
                 break;
@@ -38,11 +42,9 @@
         }
 
         joystick.go(dir);
-    }
+    };
 
     onMount(() => {
-        joystick.set(['home']);
-
         document.addEventListener('keydown', handleRouting);
 
         document.addEventListener('mousemove', () => {
@@ -59,10 +61,41 @@
 
         listenConfig();
 
+        reloadColorTheme();
+        reloadStyleTheme();
+
         return () => {
             document.removeEventListener('keydown', handleRouting);
         }
-    })
+    });
+
+    const reloadColorTheme = () => {
+        const theme = colorThemes.find(theme => (
+            theme.name === $config.theme.color
+        ));
+
+        if (theme) {
+            setColorTheme(theme);
+        }
+    }
+
+    const reloadStyleTheme = () => {
+        const theme = styleThemes.find(theme => (
+            theme.name === $config.theme.style
+        ));
+
+        if (theme) {
+            setStyleTheme(theme);
+        }
+    }
+
+    $: {
+        $config.theme.color && reloadColorTheme();
+    }
+
+    $: {
+        $config.theme.style && reloadStyleTheme();
+    }
 </script>
 
 <div
@@ -96,7 +129,7 @@
     }
 
     .mono {
-        font-family: 'IBM Plex Mono';
+        font-family: var(--code);
     }
 
     :root {
@@ -142,5 +175,6 @@
         height: 100%;
         background-color: var(--bg);
         outline: none;
+        font-size: var(--f0);
     }
 </style>

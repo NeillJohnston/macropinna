@@ -1,9 +1,15 @@
 <script lang="ts">
-    export let name: string;
+	import type { Launcher } from "$lib/api";
+    import { convertFileSrc } from "@tauri-apps/api/tauri";
+
+    export let launcher: Launcher;
     export let selected: boolean;
     export let size: string;
     export let margin: string;
-    export let url: string | undefined;
+
+    const url = launcher.image_path && convertFileSrc(launcher.image_path);
+    const cssBackground = launcher.css_background ?? '';
+    const bordered = !url && !cssBackground;
 </script>
 
 <div
@@ -13,11 +19,15 @@
     style:height={size}
     style:margin-right={margin}
 >
-    <div id="inner">
+    <div
+        id="inner"
+        class:bordered={bordered}
+        style:background={cssBackground}
+    >
         {#if url}
         <img id="cover" src={url} alt="Launcher cover" />
         {:else}
-        {name}
+        {launcher.name}
         {/if}
     </div>
 </div>
@@ -49,6 +59,9 @@
         align-items: center;
         justify-content: center;
         text-align: center;
+    }
+    
+    .bordered {
         border: 1px solid var(--fg);
     }
 

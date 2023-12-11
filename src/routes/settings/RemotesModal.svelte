@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { joystick, nav, Direction } from "$lib/joystick";
-	import { onMount } from "svelte";
-	import NavBox from "../ui/NavBox.svelte";
+	import { joystick, Direction } from "$lib/joystick";
 	import { invoke } from "@tauri-apps/api";
 	import Icon from "@iconify/svelte";
 	import type { AccessInfo } from "$lib/api";
@@ -34,6 +32,10 @@
         <p>Connect <strong>{device?.name}</strong> by typing the code shown on its screen.</p>
         <CodeInput
             code={device?.code ?? '?'}
+            component={{
+                down: { id: 'remotes/modal:reject' },
+                exit: {}
+            }}
             onMatch={() => approve(device?.uuid ?? '')}
         />
         <div class="space" />

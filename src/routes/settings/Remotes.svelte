@@ -10,6 +10,7 @@
 	import MenuSection from "../ui/MenuSection.svelte";
 	import Button from "../ui/Button.svelte";
 	import Icon from "@iconify/svelte";
+	import DeviceName from "../ui/DeviceName.svelte";
 
     let pendingList: AccessInfo[] = [];
     let activeList: ActiveInfo[] = [];
@@ -139,7 +140,7 @@
         {#each pendingList as device, index}
         <NavBox id={`remotes/pending/${index}`}>
             <div class='item'>
-                <strong>{device.name}</strong>
+                <strong><DeviceName name={device.name} agent={device.agent} /></strong>
             </div>
         </NavBox>
         {/each}
@@ -154,7 +155,7 @@
         {#each activeList as device, index}
         <NavBox id={`remotes/active/${index}`}>
             <div class='item'>
-                <strong>{device.name}</strong>
+                <strong><DeviceName name={device.name} agent={device.agent} /></strong>
             </div>
         </NavBox>
         {/each}
