@@ -15,9 +15,9 @@
 	import FirstRemote from "./firstRemote/FirstRemote.svelte";
     import Theme from "./theme/Theme.svelte";
 	import Location from "./location/Location.svelte";
-	import Localization from "./localization/Localization.svelte";
-	import Finish from "./Finish.svelte";
+	// import Localization from "./localization/Localization.svelte";
 	import SuggestLaunchers from "./suggestLaunchers/SuggestLaunchers.svelte";
+	import Finish from "./Finish.svelte";
 
     const SCREEN_ANIM_MS = 800;
 
@@ -40,16 +40,16 @@
         {
             screen: Location,
             prevId: 'theme',
-            nextId: 'localization'
-        },
-        {
-            screen: Localization,
-            prevId: 'location',
+            // nextId: 'localization'
             nextId: 'suggest-launchers'
         },
+        // {
+        //     screen: Localization,
+        // },
         {
             screen: SuggestLaunchers,
-            prevId: 'localization',
+            // prevId: 'localization',
+            prevId: 'location',
             nextId: 'finish'
         },
         {
