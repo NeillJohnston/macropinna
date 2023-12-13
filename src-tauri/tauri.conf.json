@@ -55,7 +55,7 @@
       }
     },
     "security": {
-      "csp": "default-src 'self'; img-src 'self' * asset: https://asset.localhost; connect-src 'self' https://api.iconify.design; style-src 'self' 'unsafe-inline'"
+      "csp": "default-src 'self'; img-src 'self' * asset: https://asset.localhost; connect-src 'self' https://api.iconify.design https://ipapi.co/json/; style-src 'self' 'unsafe-inline'"
     },
     "updater": {
       "active": false
