@@ -78,11 +78,11 @@
               "props": {
                 "xAlign": "center",
                 "yAlign": "center",
-                "timerTypes": {
-                  "Pomodoro": 1500,
-                  "Short break": 300,
-                  "Long break": 900
-                }
+                "timerTypes": [
+                  { "name": "Pomodoro", "duration": 1500 },
+                  { "name": "Short break", "duration": 300 },
+                  { "name": "Long break", "duration": 900 }
+                ]
               }
             },
             {

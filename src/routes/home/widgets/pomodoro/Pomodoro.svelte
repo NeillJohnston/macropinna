@@ -6,11 +6,12 @@
 	import EditButton from '../EditButton.svelte';
 	import EditPomodoroModal from './EditPomodoroModal.svelte';
 	import type { XAlign, YAlign } from '$lib/layout';
+	import { onMount } from 'svelte';
 
 	export let props: {
 		xAlign: XAlign;
 		yAlign: YAlign;
-		timerTypes: { [key: string]: number };
+		timerTypes: { name: string, duration: number }[];
 	};
 
 	// Nav related exports
@@ -27,26 +28,26 @@
 
 	$: showEditButton = $nav.startsWith(id + '/');
 
-	// Map to store Pomodoro lengths in seconds, TODO: need to make this configurable in settings
-	// const timerTypes = new Map<string, number>([
-	// 	['Pomodoro', 1500],
-	// 	['Short break', 300],
-	// 	['Long break', 900]
-	// ]);
-
 	let startButtonText = 'Start';
 
 	// Timer related variables and functions
-	let timerTypes: Map<string, number> = new Map(Object.entries(props.timerTypes));
-	let timerType = 'pomodoro';
-	let time = 1500;
-	let timeRemaining = time;
+	$: timerTypes = props.timerTypes ?? [];
+	$: time = timerTypes?.[0]?.duration;
+	let timeRemaining = 0;
+	onMount(() => {
+		timeRemaining = time;
+	});
 	let state: 'idle' | 'running' | 'paused' | 'expired' = 'idle';
 	let timer: number;
 	
 	// Carousel Navigation
-	const timerTypeValues = ['Pomodoro', 'Short break', 'Long break'];
 	let timerTypeIndex = 0;
+
+	$: {
+		if(state === 'idle') {
+			timeRemaining = timerTypes[timerTypeIndex].duration;
+		}
+	}
 
 
 	// Pomodoro Functionality
@@ -96,10 +97,8 @@
 	const setTimerType = () => {
 		reset();
 
-		timerType = timerTypeValues[timerTypeIndex];
-
 		// Store new time based on timer type
-		const newTime = timerTypes.get(timerType);
+		const newTime = timerTypes[timerTypeIndex].duration;
 		if (newTime) time = newTime;
 		timeRemaining = time;
 	};
@@ -139,7 +138,7 @@
 			}}
 			onChange={setTimerType}
 			bind:index={timerTypeIndex}
-			values={timerTypeValues}
+			values={timerTypes.map(timerType => timerType.name)}
 		/>
 	</div>
 	<span id="timer">{formatTime(timeRemaining)}</span>

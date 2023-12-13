@@ -10,20 +10,23 @@
 	export let props: {
 		xAlign: XAlign;
 		yAlign: YAlign;
-		timerTypes: { [key: string]: number };
+		timerTypes: { name: string, duration: number }[];
 	};
 
 	export let save: (newProps: any) => void;
 	export let id: string;
 	export const entry = id + '/timerSettings';
 
-	let timerTypes: { [key: string]: number };
+	let timerTypes = props.timerTypes;
+
+	let timerDurationsList = timerTypes.map((timerType) => timerType.duration.toString());
 
   // TODO: Make reset make sense
 	export const reset = () => {
 		// This reset is not working. Might be causing a bug.
 		// Maintain an 'instance' based timerTypes that resets when modal is reopened.
 		timerTypes = props.timerTypes;
+		timerDurationsList = timerTypes.map((timerType) => timerType.duration.toString());
 	};
 
   // TODO: Disallow user from leaving input blank
@@ -41,11 +44,11 @@
 
   // TODO: Not updating config/props properly
 	const _save = () => {
+		timerTypes = timerDurationsList.map((timerDuration, index) => ({name: timerTypes[index].name, duration: parseInt(timerDuration)}));
 		save({
 			...props,
 			timerTypes: timerTypes
 		});
-
 		joystick.go(Direction.Exit);
 	};
 </script>
@@ -59,8 +62,8 @@
 					down: { id: id + '/shortBreakInput' },
 					exit: {}
 				}}
-				value={timerTypes['Pomodoro'].toString()}
-				placeholder="Pomodoro Length"
+				bind:value={timerDurationsList[0]}
+				placeholder={timerTypes[0].name}
 				validate={(value) => validate(value)}
 			/>
 			<div class="space" />
@@ -71,8 +74,8 @@
 					down: { id: id + '/longBreakInput' },
 					exit: {}
 				}}
-				value={timerTypes['Short break'].toString()}
-				placeholder="Short break Length"
+				bind:value={timerDurationsList[1]}
+				placeholder={timerTypes[1].name}
 				validate={(value) => validate(value)}
 			/>
 			<div class="space" />
@@ -83,8 +86,8 @@
 					down: { id: id + '/saveButton' },
 					exit: {}
 				}}
-				value={timerTypes['Long break'].toString()}
-				placeholder="Long break Length"
+				bind:value={timerDurationsList[2]}
+				placeholder={timerTypes[2].name}
 				validate={(value) => validate(value)}
 			/>
 		</MenuSection>
