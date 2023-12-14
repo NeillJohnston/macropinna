@@ -138,6 +138,7 @@
         --fg2: #888888;
         --bg: #000000;
         --bg2: #222222;
+        --bg-err: #880000;
 
         /* Margin/padding sizes */
         --xs: 0.13rem;

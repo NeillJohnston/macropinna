@@ -74,13 +74,19 @@
             {
               "name": "pomodoro",
               "coords": {
-                "h": 4,
+                "h": 3,
                 "w": 3,
                 "x": 3,
                 "y": 3
               },
               "props": {
-                "xAlign": "center"
+                "xAlign": "center",
+                "yAlign": "center",
+                "timerTypes": [
+                  { "name": "Pomodoro", "duration": 1500 },
+                  { "name": "Short break", "duration": 300 },
+                  { "name": "Long break", "duration": 900 }
+                ]
               }
             },
             {

@@ -6,7 +6,7 @@
 	import Weather from "./widgets/weather/Weather.svelte";
 	import AudioVisualizer from "./widgets/AudioVisualizer.svelte";
 	import Player from "./widgets/Player.svelte";
-    import Pomodoro from "./widgets/Pomodoro.svelte";
+    import Pomodoro from "./widgets/pomodoro/Pomodoro.svelte";
 	import { onMount } from "svelte";
 
     /*
