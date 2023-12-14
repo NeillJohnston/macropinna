@@ -44,9 +44,8 @@
 	let timerTypeIndex = 0;
 
 	$: {
-		if(state === 'idle') {
-			timeRemaining = timerTypes[timerTypeIndex].duration;
-		}
+		timeRemaining = timerTypes[timerTypeIndex].duration;
+		reset();
 	}
 
 
@@ -76,7 +75,7 @@
 
 	const reset = () => {
 		clearInterval(timer);
-		timeRemaining = time;
+		timeRemaining = timerTypes[timerTypeIndex].duration;
 		state = 'idle';
 		startButtonText = getButtonText();
 	};
@@ -87,7 +86,7 @@
 		const m = Math.floor((seconds % 3600) / 60);
 		const s = Math.round(seconds % 60);
 
-		const formattedTime = [h, m > 9 ? m : h ? '0' + m : m || '0', s > 9 ? s : '0' + s]
+		const formattedTime = [h, m > 9 ? m : h ? '0' + m : '0' + m, s > 9 ? s : '0' + s]
 			.filter(Boolean)
 			.join(':');
 
@@ -142,7 +141,7 @@
 		/>
 	</div>
 	<span id="timer">{formatTime(timeRemaining)}</span>
-	<div id="timer_controls">
+	<div id="timer-controls">
 		<Button
 			id={entry}
 			component={{
@@ -169,7 +168,7 @@
 	</div>
 </div>
 {#if showEditButton}
-<div id="edit_button">
+<div id="edit-button">
 	<EditButton
 		id={editButtonID}
 		component={{
@@ -206,17 +205,17 @@
 	}
 
 	#timer {
-		font-size: 2.5em;
+		font-size: var(--f2);
 		line-height: 1;
 		margin: var(--sm) 0;
 	}
 
-	#timer_controls {
+	#timer-controls {
 		font-size: var(--f0);
 		margin-top: var(--md);
 	}
 
-	#edit_button {
+	#edit-button {
 		position: absolute;
 		bottom: var(--xl);
 		right: var(--sm);

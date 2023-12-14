@@ -10,7 +10,7 @@
 	export let props: {
 		xAlign: XAlign;
 		yAlign: YAlign;
-		timerTypes: { name: string, duration: number }[];
+		timerTypes: { name: string; duration: number }[];
 	};
 
 	export let save: (newProps: any) => void;
@@ -21,31 +21,27 @@
 
 	let timerDurationsList = timerTypes.map((timerType) => timerType.duration.toString());
 
-  // TODO: Make reset make sense
+	// TODO: Make reset make sense
 	export const reset = () => {
 		// This reset is not working. Might be causing a bug.
 		// Maintain an 'instance' based timerTypes that resets when modal is reopened.
 		timerTypes = props.timerTypes;
-		timerDurationsList = timerTypes.map((timerType) => timerType.duration.toString());
+		timerDurationsList = timerTypes.map((timerType) => (timerType.duration / 60).toString());
 	};
 
-  // TODO: Disallow user from leaving input blank
+	// TODO: Disallow user from leaving input blank
 	export const validate = (input: string) => {
-		const parsedInput = parseInt(input);
-		if (input.trim() === '') {
-			return true;
-		}
-		if (isNaN(parsedInput)) {
-			return false;
-		}
-
-		return true;
+		const regex = /^\d+$/;
+		return regex.test(input);
 	};
 
-  // TODO: Not updating config/props properly
+	// TODO: Not updating config/props properly
 	const _save = () => {
-		timerTypes = timerDurationsList.map((timerDuration, index) => ({name: timerTypes[index].name, duration: parseInt(timerDuration)}));
-		save({
+		timerTypes = timerDurationsList.map((timerDuration, index) => ({
+			name: timerTypes[index].name,
+			duration: parseInt(timerDuration) * 60
+		}));
+	 	save({
 			...props,
 			timerTypes: timerTypes
 		});
@@ -56,6 +52,7 @@
 <CardModal idPrefix={id} scroll>
 	<div id="edit-pomodoro-modal">
 		<MenuSection label="Timer Lengths (in Minutes):">
+			<p id="label">{timerTypes[0].name}</p>
 			<KeyboardInput
 				id={entry}
 				component={{
@@ -64,9 +61,9 @@
 				}}
 				bind:value={timerDurationsList[0]}
 				placeholder={timerTypes[0].name}
-				validate={(value) => validate(value)}
+				valid={validate(timerDurationsList[0])}
 			/>
-			<div class="space" />
+			<p id="label">{timerTypes[1].name}</p>
 			<KeyboardInput
 				id={id + '/shortBreakInput'}
 				component={{
@@ -76,9 +73,9 @@
 				}}
 				bind:value={timerDurationsList[1]}
 				placeholder={timerTypes[1].name}
-				validate={(value) => validate(value)}
+				valid={validate(timerDurationsList[1])}
 			/>
-			<div class="space" />
+			<p id="label">{timerTypes[2].name}</p>
 			<KeyboardInput
 				id={id + '/longBreakInput'}
 				component={{
@@ -88,24 +85,32 @@
 				}}
 				bind:value={timerDurationsList[2]}
 				placeholder={timerTypes[2].name}
-				validate={(value) => validate(value)}
+				valid={validate(timerDurationsList[2])}
 			/>
+
+			<div class="space" />
+			<Button
+				id={id + '/saveButton'}
+				component={{
+					up: { id: id + '/longBreakInput' },
+					exit: {}
+				}}
+				onPress={_save}
+				disabled={timerDurationsList.some((timerDuration) => !validate(timerDuration))}
+				alertText="Please enter a valid number for each timer."
+			>
+				<Icon icon="carbon:save" inline /> Save
+			</Button>
 		</MenuSection>
-		<div class="space" />
-		<Button
-			id={id + '/saveButton'}
-			component={{
-				up: { id: id + '/longBreakInput' },
-				exit: {}
-			}}
-			onPress={_save}
-		>
-			<Icon icon="carbon:save" inline /> Save
-		</Button>
 	</div>
 </CardModal>
 
 <style>
+	#label {
+		font-size: var(--f-1);
+		margin: var(--sm) 0;
+	}
+
 	#edit-pomodoro-modal {
 		padding: var(--md);
 		font-size: var(--f0);
