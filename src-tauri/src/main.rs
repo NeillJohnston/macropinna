@@ -13,7 +13,6 @@ mod suggest_launchers;
 mod media_player;
 mod remote_server;
 mod weather;
-mod util;
 
 /// Global handle for the Tauri app, primarily used to expose the events API to
 /// to the remote server. Since Tauri only gives you access to events if you

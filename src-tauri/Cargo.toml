@@ -9,6 +9,12 @@ default-run = "app"
 edition = "2021"
 rust-version = "1.60"
 
+[lib]
+name = "shared"
+
+[[bin]]
+name = "remote"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]

@@ -9,10 +9,9 @@ use std::{
     thread::JoinHandle
 };
 
-use crate::{
-    launcher,
-    util::numeric::try_f64_to_i32
-};
+use crate::launcher;
+
+use shared::util::numeric::try_f64_to_i32;
 
 pub struct Context {
     send: mpsc::Sender<RemoteControlEvent>,
