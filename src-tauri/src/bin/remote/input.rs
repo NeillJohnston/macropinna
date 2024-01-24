@@ -9,8 +9,6 @@ use std::{
     thread::JoinHandle
 };
 
-use crate::launcher;
-
 use shared::util::numeric::try_f64_to_i32;
 
 pub struct Context {
@@ -159,7 +157,7 @@ impl Context {
                         };
                     }
                     Action(Home) => {
-                        launcher::raise_home();
+                        todo!();
                     }
                     Action(AltTab) => {
                         // TODO i know it's literally called alt-tab, but this

@@ -1,8 +1,6 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use directories::ProjectDirs;
-use lazy_static::lazy_static;
 use std::sync::{Arc, Mutex, atomic::AtomicBool};
 use tauri::{AppHandle, Wry, Manager};
 
@@ -14,11 +12,13 @@ mod media_player;
 mod remote_server;
 mod weather;
 
-/// Global handle for the Tauri app, primarily used to expose the events API to
-/// to the remote server. Since Tauri only gives you access to events if you
-/// have a handle to an app, and it only exposes this in a callback from the
-/// `Builder`, we have to take an excessively convoluted route to allow other
-/// threads access.
+/// Global handle for the Tauri app. Since Tauri only gives you access to events
+/// if you have a handle to an app, and it only exposes this in a callback from
+/// the `Builder` or a command, we have to take an excessively convoluted route
+/// to allow other threads access.
+/// 
+/// TODO this is only used to emit events from the config file watcher, which
+/// could be replaced with a poll-type watcher to save some hassle
 #[derive(Clone)]
 pub struct GlobalAppHandle {
     handle: Arc<Mutex<Option<AppHandle<Wry>>>>,
@@ -33,37 +33,12 @@ impl GlobalAppHandle {
     } 
 }
 
-lazy_static! {
-    static ref PROJECT_DIRS: ProjectDirs = {
-        ProjectDirs::from(
-            "",
-            "Macropinna",
-            "Macropinna"
-        ).unwrap()
-    };
-}
-
-/// Initialize base directories
-fn init_directories() {
-    use std::fs;
-
-    if let Err(err) = fs::create_dir_all(PROJECT_DIRS.config_dir()) {
-        log::error!("{}", err);
-        panic!();
-    }
-
-    if let Err(err) = fs::create_dir_all(PROJECT_DIRS.data_dir()) {
-        log::error!("{}", err);
-        panic!();
-    }
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use config::ConfigManager;
     use launcher::LauncherManager;
     use audio_visualizer::AudioVisualizerManager;
-    use remote_server::RemoteServerManager;
+    use shared::util::project_dirs;
 
     env_logger::init();
 
@@ -75,18 +50,13 @@ async fn main() -> anyhow::Result<()> {
     // Initialize project directories, managers (which may have their own
     // initialization routines)
 
-    init_directories();
+    project_dirs::ensure();
 
     let config_manager = ConfigManager::new(global_app_handle.clone());
 
     let launcher_manager = LauncherManager::new();
 
     let audio_visualizer_manager = AudioVisualizerManager::new(&config_manager).unwrap();
-
-    let remote_manager = RemoteServerManager::new(
-        &config_manager,
-        global_app_handle.clone()
-    );
     
     let mut builder = tauri::Builder::default()
         .setup(move |app| {
@@ -97,8 +67,7 @@ async fn main() -> anyhow::Result<()> {
         })
         .manage(config_manager)
         .manage(launcher_manager)
-        .manage(audio_visualizer_manager)
-        .manage(remote_manager);
+        .manage(audio_visualizer_manager);
 
     #[cfg(windows)]
     {
@@ -121,7 +90,7 @@ async fn main() -> anyhow::Result<()> {
             remote_server::get_pending_info_list,
             remote_server::get_active_info_list,
             remote_server::update_pending,
-            remote_server::ip::get_remote_server_ip,
+            remote_server::get_remote_server_ips,
         ])
         .run(tauri::generate_context!())?;
 

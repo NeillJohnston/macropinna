@@ -4,7 +4,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use tauri::State;
 
-use crate::{PROJECT_DIRS, GlobalAppHandle};
+use crate::GlobalAppHandle;
+use shared::util::project_dirs::PROJECT_DIRS;
 
 pub struct ConfigManager {
     pub config: Arc<RwLock<Config>>,

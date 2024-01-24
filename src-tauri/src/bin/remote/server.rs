@@ -3,14 +3,11 @@
 //! Serves the remote static site and handles client connections, all handled
 //! through a single warp server.
 
-pub mod ip;
-
-mod input;
-
 use crate::{
-    GlobalAppHandle,
-    config::ConfigManager, PROJECT_DIRS,
+    input,
+    config::Config
 };
+use shared::util::project_dirs::PROJECT_DIRS;
 
 use futures::stream::SplitSink;
 use serde::{Serialize, Deserialize};
@@ -21,7 +18,6 @@ use std::{
     sync::{Arc, Mutex},
     time::{Instant, Duration},
 };
-use tauri::State;
 use tokio::{sync::oneshot, time::timeout};
 use uuid::Uuid;
 use warp::{
@@ -30,13 +26,8 @@ use warp::{
 };
 
 const PENDING_TIMEOUT_S: u64 = 60_000;
-pub struct RemoteServerManager {
-    state: Arc<ServerState>,
-}
 
 struct ServerState {
-    app_handle: GlobalAppHandle,
-    port: u16,
     signer: Arc<String>,
     cert_path: Arc<PathBuf>,
     key_path: Arc<PathBuf>,
@@ -113,7 +104,7 @@ pub struct ActiveInfo {
 
 struct Active {
     info: ActiveInfo,
-    send: SplitSink<ws::WebSocket, ws::Message>
+    _send: SplitSink<ws::WebSocket, ws::Message>
 }
 
 impl ServerState {
@@ -143,11 +134,6 @@ impl ServerState {
             });
         }
 
-        self.app_handle.emit_all(
-            RemoteServerEvent::channel(),
-            RemoteServerEvent::RefreshPending
-        );
-
         Some(recv)
     }
 
@@ -157,11 +143,6 @@ impl ServerState {
             let mut pending_map = self.pending_map.lock().unwrap();
             pending_map.remove(uuid);
         }
-    
-        self.app_handle.emit_all(
-            RemoteServerEvent::channel(),
-            RemoteServerEvent::RefreshPending
-        );
     }
 
     /// Add an active connection
@@ -176,17 +157,9 @@ impl ServerState {
             let mut active_map = self.active_map.lock().unwrap();
             active_map.insert(claims.sub.clone(), Active {
                 info: info.clone(),
-                send
+                _send: send
             });
         }
-
-        self.app_handle.emit_all(
-            RemoteServerEvent::channel(),
-            RemoteServerEvent::Connected {
-                uuid: info.uuid,
-                name: info.name
-            }
-        );
     }
 
     /// Remove an active conncetion
@@ -195,11 +168,6 @@ impl ServerState {
             let mut active_map = self.active_map.lock().unwrap();
             active_map.remove(uuid);
         }
-
-        self.app_handle.emit_all(
-            RemoteServerEvent::channel(),
-            RemoteServerEvent::RefreshActive
-        );
     }
 }
 
@@ -242,36 +210,92 @@ impl ActiveDeviceClaims {
     }
 }
 
-impl RemoteServerManager {
-    pub fn new(config: &ConfigManager, app_handle: GlobalAppHandle) -> Self {
-        let config = config.config.read().unwrap();
+pub async fn run(config: Config) {
+    let cert_path = PROJECT_DIRS.config_dir().join("cert.pem");
+    let key_path = PROJECT_DIRS.config_dir().join("key.pem");
 
-        let cert_path = PROJECT_DIRS.config_dir().join("cert.pem");
-        let key_path = PROJECT_DIRS.config_dir().join("key.pem");
+    ensure_cert(&cert_path, &key_path).map_err(|err| {
+        log::error!("Error while generating cert: {}", err);
+    }).unwrap();
 
-        ensure_cert(&cert_path, &key_path).map_err(|err| {
-            log::error!("Error while generating cert: {}", err);
-        }).unwrap();
+    let state = Arc::new(ServerState {
+        // TODO unhardcode
+        signer: Arc::new("secret".to_string()),
+        cert_path: Arc::new(cert_path),
+        key_path: Arc::new(key_path),
+        input_ctx: input::Context::new(),
+        init_map: Mutex::new(BTreeMap::new()),
+        pending_map: Mutex::new(BTreeMap::new()),
+        active_map: Mutex::new(BTreeMap::new()),
+    });
 
-        let server = Arc::new(ServerState {
-            app_handle,
-            port: config.remote_server.port,
-            // TODO unhardcode
-            signer: Arc::new("secret".to_string()),
-            cert_path: Arc::new(cert_path),
-            key_path: Arc::new(key_path),
-            input_ctx: input::Context::new(),
-            init_map: Mutex::new(BTreeMap::new()),
-            pending_map: Mutex::new(BTreeMap::new()),
-            active_map: Mutex::new(BTreeMap::new()),
-        });
+    let remote_static_path = "./remote-static";
 
-        spawn_server(server.clone());
+    // /...: serves all static files
+    let index = warp::fs::dir(remote_static_path);
 
-        RemoteServerManager {
-            state: server
-        }
-    }
+    // /api/register: register a device as a remote
+    let register = warp::path!("api" / "register")
+        .and(warp::post())
+        .and(warp::header("User-Agent"))
+        .and(warp::body::json::<RegisterRequest>())
+        .and(with_state(state.clone()))
+        .map(handle_register);
+
+    // /api/register/[uuid]: wait for registration approval/rejection
+    let register_uuid = warp::path!("api" / "register" / Uuid)
+        .and(warp::post())
+        .and(with_state(state.clone()))
+        .then(handle_register_uuid);
+
+    // /api/ws/[jwt]: authenticates and creates a WebSocket connection
+    let ws = warp::path!("api" / "ws" / String)
+        .and(warp::ws())
+        .and(with_state(state.clone()))
+        .map(handle_ws);
+
+    let routes = index
+        .or(register)
+        .or(register_uuid)
+        .or(ws);
+
+    let external = warp::serve(routes)
+        .tls()
+        .cert_path(state.cert_path.as_path())
+        .key_path(state.key_path.as_path())
+        .run(([0, 0, 0, 0], config.port));
+
+    // /api/approve/[uuid]: approve a device
+    let approve = warp::path!("api" / "update" / Uuid)
+        .and(warp::post())
+        .and(with_state(state.clone()))
+        .map(handle_approve);
+
+    // /api/reject/[uuid]: reject a device
+    let reject = warp::path!("api" / "update" / Uuid)
+        .and(warp::post())
+        .and(with_state(state.clone()))
+        .map(handle_reject);
+
+    // /api/current/pending: get the current pending connections
+    let current_pending = warp::path!("api" / "current" / "pending")
+        .and(with_state(state.clone()))
+        .map(handle_current_pending);
+
+    // /api/current/active: get the current active connections
+    let current_active = warp::path!("api" / "current" / "active")
+        .and(with_state(state.clone()))
+        .map(handle_current_active);
+
+    let routes = approve
+        .or(reject)
+        .or(current_pending)
+        .or(current_active);
+
+    let internal = warp::serve(routes)
+        .run(([127, 0, 0, 1], config.port_internal));
+
+    futures::join!(external, internal);
 }
 
 fn ensure_cert(cert_path: &PathBuf, key_path: &PathBuf) -> anyhow::Result<()> {
@@ -302,74 +326,6 @@ fn ensure_cert(cert_path: &PathBuf, key_path: &PathBuf) -> anyhow::Result<()> {
     }
 
     Ok(())
-}
-
-#[derive(Clone, Serialize)]
-enum RemoteServerEvent {
-    RefreshPending,
-    RefreshActive,
-    Connected {
-        uuid: Uuid,
-        name: String
-    }
-}
-
-impl RemoteServerEvent {
-    fn channel() -> &'static str {
-        "remote_server"
-    }
-}
-
-fn spawn_server(state: Arc<ServerState>) {
-    tokio::task::spawn(async move {
-        loop {
-            let exists = &state.app_handle.exists;
-            if exists.load(std::sync::atomic::Ordering::Relaxed) { break; }
-        }
-
-        #[cfg(not(debug_assertions))]
-        let remote_static_path = state.app_handle.handle
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .path_resolver()
-            .resolve_resource("remote-static")
-            .unwrap();
-        #[cfg(debug_assertions)]
-        let remote_static_path = "./remote-static";
-
-        let index = warp::fs::dir(remote_static_path);
-
-        let register = warp::path!("api" / "register")
-            .and(warp::post())
-            .and(warp::header("User-Agent"))
-            .and(warp::body::json::<RegisterRequest>())
-            .and(with_state(state.clone()))
-            .map(handle_register);
-
-        let register_uuid = warp::path!("api" / "register" / Uuid)
-            .and(warp::post())
-            .and(with_state(state.clone()))
-            .then(handle_register_uuid);
-
-        let ws = warp::path!("api" / "ws" / String)
-            .and(warp::ws())
-            .and(with_state(state.clone()))
-            .map(handle_ws);
-
-        let routes = index
-            .or(register)
-            .or(register_uuid)
-            .or(ws);
-
-        warp::serve(routes)
-            .tls()
-            .cert_path(state.cert_path.as_path())
-            .key_path(state.key_path.as_path())
-            .run(([0, 0, 0, 0], state.port))
-            .await;
-    });
 }
 
 fn with_state(server: Arc<ServerState>) -> impl Filter<Extract = (Arc<ServerState>,), Error = Infallible> + Clone {
@@ -518,43 +474,58 @@ async fn handle_ws_connection(socket: ws::WebSocket, claims: ActiveDeviceClaims,
     state.remove_active(&uuid);
 }
 
-#[tauri::command]
-pub fn get_pending_info_list(remote_server: State<'_, RemoteServerManager>) -> Vec<AccessInfo> {
-    let mut list = { // Lock for server.pending_map
-        let pending_map = remote_server.state.pending_map.lock().unwrap();
-        pending_map.values().map(|val| (val.info.clone(), val.timestamp)).collect::<Vec<_>>()
-    };
-
-    list.sort_by_key(|(_, timestamp)| timestamp.clone());
-
-    list.into_iter().map(|(info, _)| info).collect()
-}
-
-#[tauri::command]
-pub fn get_active_info_list(remote_server: State<'_, RemoteServerManager>) -> Vec<ActiveInfo> {
-    let list = { // Lock for server.active_map
-        let active_map = remote_server.state.active_map.lock().unwrap();
-        active_map.values().map(|val| val.info.clone()).collect::<Vec<_>>()
-    };
-
-    list
-}
-
-#[tauri::command]
-pub fn update_pending(remote_server: State<'_, RemoteServerManager>, uuid: Uuid, approve: bool) {
-    let pending = { // Lock for server.pending_map
-        let mut pending_map = remote_server.state.pending_map.lock().unwrap();
+fn handle_approve(uuid: Uuid, state: Arc<ServerState>) -> impl Reply {
+    let pending = { // Lock for state.pending_map
+        let mut pending_map = state.pending_map.lock().unwrap();
         pending_map.remove(&uuid)
     };
 
     if pending.is_none() {
         log::error!("Tried to update pending status for nonexistent uuid {}", uuid);
-        return;
+        return warp::reply::json(&false);
     }
     let pending = pending.unwrap();
     
-    let _res = pending.send.send(match approve {
-        true => AccessApproval::Approve(pending.info),
-        false => AccessApproval::Reject
-    });
+    let res = pending.send.send(AccessApproval::Approve(pending.info));
+
+    warp::reply::json(&res.is_ok())
+}
+
+fn handle_reject(uuid: Uuid, state: Arc<ServerState>) -> impl Reply {
+    let pending = { // Lock for state.pending_map
+        let mut pending_map = state.pending_map.lock().unwrap();
+        pending_map.remove(&uuid)
+    };
+
+    if pending.is_none() {
+        log::error!("Tried to update pending status for nonexistent uuid {}", uuid);
+        return warp::reply::json(&false);
+    }
+    let pending = pending.unwrap();
+    
+    let res = pending.send.send(AccessApproval::Reject);
+
+    warp::reply::json(&res.is_ok())
+}
+
+fn handle_current_pending(state: Arc<ServerState>) -> impl Reply {
+    let mut list = { // Lock for state.pending_map
+        let pending_map = state.pending_map.lock().unwrap();
+        pending_map.values().map(|val| (val.info.clone(), val.timestamp)).collect::<Vec<_>>()
+    };
+
+    list.sort_by_key(|(_, timestamp)| timestamp.clone());
+
+    let list = list.into_iter().map(|(info, _)| info).collect::<Vec<_>>();
+
+    warp::reply::json(&list)
+}
+
+fn handle_current_active(state: Arc<ServerState>) -> impl Reply {
+    let list = { // Lock for state.active_map
+        let active_map = state.active_map.lock().unwrap();
+        active_map.values().map(|val| val.info.clone()).collect::<Vec<_>>()
+    };
+
+    warp::reply::json(&list)
 }
