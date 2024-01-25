@@ -1,6 +1,6 @@
 //! Interface for the remote control server.
 
-use crate::config::ConfigManager;
+use crate::config_listener::ConfigManager;
 use shared::api::remote::*;
 
 use tauri::State;

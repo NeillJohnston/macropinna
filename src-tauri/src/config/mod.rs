@@ -1,146 +1,5 @@
-use notify::RecommendedWatcher;
 use serde::{Serialize, Deserialize};
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
-use tauri::State;
-
-use crate::GlobalAppHandle;
-use shared::util::project_dirs::PROJECT_DIRS;
-
-pub struct ConfigManager {
-    pub config: Arc<RwLock<Config>>,
-    path: PathBuf,
-    _watcher: notify::RecommendedWatcher
-}
-
-#[derive(Clone, Serialize)]
-enum ConfigEvent {
-    Set {
-        config: Config
-    }
-}
-
-impl ConfigEvent {
-    fn channel() -> &'static str {
-        "config"
-    }
-}
-
-impl ConfigManager {
-    pub fn new(app_handle: GlobalAppHandle) -> Self {
-
-        // TODO definitely redundant if this is only ever going to be hardcoded.
-        // Might be nice to let users change this based on environment vars, but
-        // I'm not sure if that's a common usecase
-        let base_path = PROJECT_DIRS.config_dir().into();
-        let path = PROJECT_DIRS.config_dir().join("config.json");
-        log::info!("Config path: {}", path.display());
-
-        let config =
-            if !path.exists() {
-                let config = Config::default();
-
-                Self::save_to_path(&path, &config);
-
-                config
-            }
-            else {
-                Self::load_from_path(&path).unwrap()
-            };
-        let config = Arc::new(RwLock::new(config));
-
-        let watcher = Self::make_watcher(config.clone(), app_handle, base_path, path.clone());
-
-        let config_manager = ConfigManager {
-            config,
-            path,
-            _watcher: watcher,
-        };
-
-        config_manager
-    }
-
-    fn make_watcher(
-        config_rw: Arc<RwLock<Config>>,
-        app_handle: GlobalAppHandle,
-        base_path: PathBuf,
-        path: PathBuf
-    ) -> RecommendedWatcher {
-        use notify::{Event, RecursiveMode, Result, Watcher};
-
-        let mut watcher = notify::recommended_watcher(
-            move |res: Result<Event>| {
-                if let Ok(event) = res {
-                    // TODO only trigger on changes to actual file (path)
-                    if event.kind.is_modify() {
-                        if let Some(config) = ConfigManager::load_from_path(&path) {
-                            log::info!("Detected change in config");
-                            *config_rw.write().unwrap() = config.clone();
-
-                            app_handle.emit_all(ConfigEvent::channel(), ConfigEvent::Set { config });
-                        }
-                    }
-                }
-            }
-        ).unwrap();
-
-        // When watching a single file, the inotify watcher deletes itself when
-        // the original file is deleted - some editors handle file modifications
-        // by deleting the original and creating a new file with the same name.
-        // Not sure what the best way to handle that is, but watching something
-        // that doesn't get deleted (like the directory) is better
-        watcher.watch(&base_path, RecursiveMode::Recursive).unwrap();
-
-        watcher
-    }
-
-    pub fn save(&self) {
-        Self::save_to_path(&self.path, &self.config.read().unwrap());
-    }
-
-    fn save_to_path<P: AsRef<Path>>(path: P, config: &Config) {
-        use serde_json::ser::Serializer;
-        use std::fs::OpenOptions;
-
-        let oo = OpenOptions::new()
-            .write(true)
-            .truncate(true)
-            .create(true)
-            .open(path);
-        let file = match oo {
-            Ok(file) => file,
-            Err(err) => {
-                log::error!("{}", err);
-                return;
-            }
-        };
-
-        let mut serializer = Serializer::pretty(file);
-        if let Err(err) = config.serialize(&mut serializer) {
-            log::error!("{}", err);
-        }
-    }
-
-    fn load_from_path<P: AsRef<Path> + Clone>(path: P) -> Option<Config> {
-        use std::fs::read;
-
-        log::info!("Reading config from {}", path.as_ref().display());
-
-        let config = match read(path.clone()) {
-            Ok(bytes) => bytes,
-            Err(err) => {
-                log::error!("Error while reading config file: {}", err);
-                "{version:0}".into()
-            }
-        };
-
-        Config::versioned_deserialize(&config)
-            .map_err(|err| {
-                log::error!("Error while reading config file: {}", err);
-            })
-            .ok()
-    }
-}
+use std::path::Path;
 
 /// Trait to provide a versioning chain for config files. Ensures that a config
 /// file written for any config version can be safely used and upgraded to the
@@ -256,13 +115,15 @@ pub struct AudioDevice {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RemoteServer {
-    pub port: u16
+    pub port: u16,
+    pub port_internal: u16
 }
 
 impl Default for RemoteServer {
     fn default() -> Self {
         RemoteServer {
-            port: 5174
+            port: 5174,
+            port_internal: 51740
         }
     }
 }
@@ -283,13 +144,45 @@ impl Default for Config {
     }
 }
 
-#[tauri::command]
-pub fn get_config(config: State<'_, ConfigManager>) -> Config {
-    config.config.read().unwrap().clone()
+pub fn save_to_path<P: AsRef<Path>>(path: P, config: &Config) {
+    use serde_json::ser::Serializer;
+    use std::fs::OpenOptions;
+
+    let oo = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(path);
+    let file = match oo {
+        Ok(file) => file,
+        Err(err) => {
+            log::error!("{}", err);
+            return;
+        }
+    };
+
+    let mut serializer = Serializer::pretty(file);
+    if let Err(err) = config.serialize(&mut serializer) {
+        log::error!("{}", err);
+    }
 }
 
-#[tauri::command]
-pub fn set_config(config: State<'_, ConfigManager>, new_config: Config) {
-    *config.config.write().unwrap() = new_config;
-    config.save();
+pub fn load_from_path<P: AsRef<Path> + Clone>(path: P) -> Option<Config> {
+    use std::fs::read;
+
+    log::info!("Reading config from {}", path.as_ref().display());
+
+    let config = match read(path.clone()) {
+        Ok(bytes) => bytes,
+        Err(err) => {
+            log::error!("Error while reading config file: {}", err);
+            "{version:0}".into()
+        }
+    };
+
+    Config::versioned_deserialize(&config)
+        .map_err(|err| {
+            log::error!("Error while reading config file: {}", err);
+        })
+        .ok()
 }

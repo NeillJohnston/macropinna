@@ -1,4 +1,4 @@
-use crate::config::Launcher;
+use shared::config::*;
 
 #[tauri::command]
 pub fn suggest_launchers() -> Vec<Launcher> {

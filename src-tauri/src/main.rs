@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex, atomic::AtomicBool};
 use tauri::{AppHandle, Wry, Manager};
 
 mod audio_visualizer;
-mod config;
+mod config_listener;
 mod launcher;
 mod suggest_launchers;
 mod media_player;
@@ -35,7 +35,7 @@ impl GlobalAppHandle {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    use config::ConfigManager;
+    use config_listener::ConfigManager;
     use launcher::LauncherManager;
     use audio_visualizer::AudioVisualizerManager;
     use shared::util::project_dirs;
@@ -78,8 +78,8 @@ async fn main() -> anyhow::Result<()> {
     builder
         .invoke_handler(tauri::generate_handler![
             // commands::keystone_correct,
-            config::get_config,
-            config::set_config,
+            config_listener::get_config,
+            config_listener::set_config,
             launcher::launch,
             suggest_launchers::suggest_launchers,
             weather::get_weather,

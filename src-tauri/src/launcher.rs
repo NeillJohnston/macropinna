@@ -1,4 +1,4 @@
-use crate::config::ConfigManager;
+use crate::config_listener::ConfigManager;
 
 use tauri::State;
 use std::{

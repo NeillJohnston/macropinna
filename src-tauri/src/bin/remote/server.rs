@@ -1,13 +1,17 @@
 //! Server for the remote control.
 //! 
-//! Serves the remote static site and handles client connections, all handled
-//! through a single warp server.
+//! The functionality is actually split into two warp servers:
+//! - An external (broadcast) HTTPS endpoint
+//! - An internal (localhost) HTTP endpoint
+//! 
+//! The external endpoint is what devices connect to, and the internal endpoint
+//! is what the Macropinna UI calls.
 
-use crate::{
-    input,
-    config::Config
+use crate::input;
+use shared::{
+    config::Config,
+    util::project_dirs::PROJECT_DIRS
 };
-use shared::util::project_dirs::PROJECT_DIRS;
 
 use futures::stream::SplitSink;
 use serde::{Serialize, Deserialize};
@@ -231,10 +235,10 @@ pub async fn run(config: Config) {
 
     let remote_static_path = "./remote-static";
 
-    // /...: serves all static files
+    // <external>/...: serves all static files
     let index = warp::fs::dir(remote_static_path);
 
-    // /api/register: register a device as a remote
+    // <external>/api/register: register a device as a remote
     let register = warp::path!("api" / "register")
         .and(warp::post())
         .and(warp::header("User-Agent"))
@@ -242,13 +246,13 @@ pub async fn run(config: Config) {
         .and(with_state(state.clone()))
         .map(handle_register);
 
-    // /api/register/[uuid]: wait for registration approval/rejection
+    // <external>/api/register/[uuid]: wait for registration approval/rejection
     let register_uuid = warp::path!("api" / "register" / Uuid)
         .and(warp::post())
         .and(with_state(state.clone()))
         .then(handle_register_uuid);
 
-    // /api/ws/[jwt]: authenticates and creates a WebSocket connection
+    // <external>/api/ws/[jwt]: authenticates and creates a WebSocket connection
     let ws = warp::path!("api" / "ws" / String)
         .and(warp::ws())
         .and(with_state(state.clone()))
@@ -263,26 +267,26 @@ pub async fn run(config: Config) {
         .tls()
         .cert_path(state.cert_path.as_path())
         .key_path(state.key_path.as_path())
-        .run(([0, 0, 0, 0], config.port));
+        .run(([0, 0, 0, 0], config.remote_server.port));
 
-    // /api/approve/[uuid]: approve a device
+    // <internal>/api/approve/[uuid]: approve a device
     let approve = warp::path!("api" / "update" / Uuid)
         .and(warp::post())
         .and(with_state(state.clone()))
         .map(handle_approve);
 
-    // /api/reject/[uuid]: reject a device
+    // <internal>/api/reject/[uuid]: reject a device
     let reject = warp::path!("api" / "update" / Uuid)
         .and(warp::post())
         .and(with_state(state.clone()))
         .map(handle_reject);
 
-    // /api/current/pending: get the current pending connections
+    // <internal>/api/current/pending: get the current pending connections
     let current_pending = warp::path!("api" / "current" / "pending")
         .and(with_state(state.clone()))
         .map(handle_current_pending);
 
-    // /api/current/active: get the current active connections
+    // <internal>/api/current/active: get the current active connections
     let current_active = warp::path!("api" / "current" / "active")
         .and(with_state(state.clone()))
         .map(handle_current_active);
@@ -293,7 +297,7 @@ pub async fn run(config: Config) {
         .or(current_active);
 
     let internal = warp::serve(routes)
-        .run(([127, 0, 0, 1], config.port_internal));
+        .run(([127, 0, 0, 1], config.remote_server.port_internal));
 
     futures::join!(external, internal);
 }

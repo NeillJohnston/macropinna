@@ -4,7 +4,7 @@ use cpal::{Stream, SupportedStreamConfig, Device, SizedSample};
 use std::{sync::{mpsc, Arc, Mutex, atomic::AtomicBool}, collections::VecDeque};
 use tauri::State;
 
-use crate::config::ConfigManager;
+use crate::config_listener::ConfigManager;
 
 // Human-audible range (https://en.wikipedia.org/wiki/Hearing_range)
 const HEARING_RANGE: (f32, f32) = (20.0, 20_000.0);

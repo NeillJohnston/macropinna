@@ -1,14 +1,12 @@
-mod config;
+use shared::config::Config;
+
 mod input;
 mod server;
 
 #[tokio::main]
 async fn main() {
-    // TODO load from file
-    let config = config::Config {
-        port: 5174,
-        port_internal: 51740
-    };
+    // TODO load from file once
+    let config: Config = todo!();
 
     server::run(config).await;
 }

@@ -1,4 +1,5 @@
-use crate::config::*;
+use crate::config_listener::ConfigManager;
+use shared::config::*;
 
 use serde::Serialize;
 use serde_json::Value as JsonValue;
