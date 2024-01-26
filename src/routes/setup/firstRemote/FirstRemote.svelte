@@ -2,38 +2,28 @@
 	import { onMount } from "svelte";
 	import type { ScreenProps } from "../+page.svelte";
 	import ContinueButton from "../ContinueButton.svelte";
-	import { Direction, joystick, nav } from "$lib/joystick";
+	import { Direction, joystick } from "$lib/joystick";
 	import QRCode from "@castlenine/svelte-qrcode";
-	import { getActiveDevices, getPendingDevices, getRemoteServerIp, type AccessInfo, type RemoteServerEvent, type ActiveInfo } from "$lib/api";
+	import { getActiveDevices, getPendingDevices, getRemoteServerIps, type AccessInfo, type ActiveInfo, type RemoteServerIp } from "$lib/api";
 	import MenuSection from "../../ui/MenuSection.svelte";
-	import { listen } from "@tauri-apps/api/event";
 	import CardModal from "../../ui/CardModal.svelte";
 	import CodeInput from "./CodeInput.svelte";
 	import Button from "../../ui/Button.svelte";
 	import { invoke } from "@tauri-apps/api";
 	import Icon from "@iconify/svelte";
 	import DeviceName from "../../ui/DeviceName.svelte";
+	import CarouselSelector from "../../ui/CarouselSelector.svelte";
 
     export let props: ScreenProps;
 
     const id = 'first-remote';
     const continueButtonId = 'first-remote/continue';
+    
+    let error = false;
 
-    let ip: string | undefined = undefined;
-    let device: AccessInfo | undefined = undefined;
-    let activeList: ActiveInfo[] = [];
-    onMount(() => {
-        joystick.register(id, {
-            up: { action: props.prev },
-            down: { id: continueButtonId }
-        });
-
-        listen('remote_server', async (event) => {
-            const payload = event.payload as RemoteServerEvent;
-
-            if (payload === 'RefreshPending') {
-                const pendingList = await getPendingDevices();
-                
+    const refresh = () => {
+        try {
+            getPendingDevices().then(pendingList => {
                 const existingDevice = !!device;
                 device = pendingList[0];
                 if (!existingDevice && !!device) {
@@ -43,19 +33,39 @@
                     joystick.goFrom('first-remote/modal:code', Direction.Exit);
                     joystick.goFrom('first-remote/modal:reject', Direction.Exit);
                 }
-            }
-            else {
-                activeList = await getActiveDevices();
-            }
-        });
+            });
 
+            getActiveDevices().then(list => {
+                activeList = list;
+            });
+
+            error = false;
+        }
+        catch (_error) {
+            error = true;
+        }
+    };
+
+    let ips: RemoteServerIp[] = [];
+    let ipNames: string[] = [];
+    let index = 0;
+    let device: AccessInfo | undefined = undefined;
+    let activeList: ActiveInfo[] = [];
+    onMount(() => {
         getActiveDevices().then(_activeList => {
             activeList = _activeList;
         })
 
-        getRemoteServerIp().then(_ip => {
-            ip = _ip;
+        getRemoteServerIps().then(_ips => {
+            ips = _ips;
+            ipNames = ips.map(ip => ip.name);
         });
+
+        refresh();
+        const refreshInterval = setInterval(refresh, 500);
+        return () => {
+            clearInterval(refreshInterval);
+        }
     });
 
     const approve = (uuid: string) => {
@@ -71,9 +81,32 @@
 
 <div id="first-remote">
     <div id="qr">
-        {#if ip}
-        <QRCode content={ip} padding={2} isResponsive />
-        {/if}
+        <div id="qr-inner">
+            {#if ips.length > 0}
+            <div class="overlay" id="carousel">
+                <CarouselSelector
+                    id={id}
+                    bind:index={index}
+                    values={ipNames}
+                    component={{
+                        up: { action: props.prev },
+                        down: { id: continueButtonId }
+                    }}
+                />
+            </div>
+            <div class="overlay" id="address">
+                {ips[index].ip}
+            </div>
+            {#each ips as ip, _index}
+            <div class:hidden={index !== _index}>
+                <QRCode content={ip.ip} padding={2} isResponsive />
+            </div>
+            {/each}
+            {:else}
+            <p><strong>Could not find a suitable IP address for the remote server.</strong></p>
+            <p>Check your console or log for errors.</p>
+            {/if}
+        </div>
     </div>
     <div id="connected-list">
         {#if activeList.length === 0}
@@ -136,6 +169,32 @@
         aspect-ratio: 1/1;
         box-sizing: border-box;
         padding: var(--lg);
+    }
+
+    #qr-inner {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+
+    .overlay {
+        width: 100%;
+        position: absolute;
+        color: black;
+        font-size: var(--f-1);
+    }
+
+    #carousel {
+        top: 0;
+    }
+
+    #address {
+        text-align: center;
+        bottom: 0;
+    }
+
+    .hidden {
+        display: none;
     }
 
     #connected-list {
