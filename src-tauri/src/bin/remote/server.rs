@@ -270,13 +270,13 @@ pub async fn run(config: Config) {
         .run(([0, 0, 0, 0], config.remote_server.port));
 
     // <internal>/api/approve/[uuid]: approve a device
-    let approve = warp::path!("api" / "update" / Uuid)
+    let approve = warp::path!("api" / "approve" / Uuid)
         .and(warp::post())
         .and(with_state(state.clone()))
         .map(handle_approve);
 
     // <internal>/api/reject/[uuid]: reject a device
-    let reject = warp::path!("api" / "update" / Uuid)
+    let reject = warp::path!("api" / "reject" / Uuid)
         .and(warp::post())
         .and(with_state(state.clone()))
         .map(handle_reject);

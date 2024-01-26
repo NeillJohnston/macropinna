@@ -1,24 +1,70 @@
 //! Interface for the remote control server.
 
 use crate::config_listener::ConfigManager;
+use serde::de::DeserializeOwned;
 use shared::api::remote::*;
 
 use tauri::State;
 use uuid::Uuid;
 
-#[tauri::command]
-pub fn get_pending_info_list(app_handle: tauri::AppHandle, config: State<'_, ConfigManager>) -> Vec<AccessInfo> {
-    todo!()
+async fn get_deserialized<T: DeserializeOwned>(url: &str) -> anyhow::Result<T> {
+    let res = reqwest::get(url).await?;
+    let value = res.json().await?;
+    let obj = serde_json::from_value(value)?;
+    Ok(obj)
 }
 
 #[tauri::command]
-pub fn get_active_info_list(app_handle: tauri::AppHandle, config: State<'_, ConfigManager>) -> Vec<ActiveInfo> {
-    todo!()
+pub async fn get_pending_info_list(config: State<'_, ConfigManager>) -> Result<Vec<AccessInfo>, ()> {
+    let url = format!(
+        "http://localhost:{}/api/current/pending",
+        config.config.read().unwrap().remote_server.port_internal
+    );
+
+    get_deserialized(&url)
+        .await
+        .map_err(|err| {
+            log::error!("{}", err);
+        })
 }
 
 #[tauri::command]
-pub fn update_pending(app_handle: tauri::AppHandle, config: State<'_, ConfigManager>, uuid: Uuid, approve: bool) {
-    todo!()
+pub async fn get_active_info_list(config: State<'_, ConfigManager>) -> Result<Vec<ActiveInfo>, ()> {
+    let url = format!(
+        "http://localhost:{}/api/current/active",
+        config.config.read().unwrap().remote_server.port_internal
+    );
+
+    get_deserialized(&url)
+        .await
+        .map_err(|err| {
+            log::error!("{}", err);
+        })
+}
+
+#[tauri::command]
+pub async fn update_pending(config: State<'_, ConfigManager>, uuid: Uuid, approve: bool) -> Result<(), ()> {
+    let endpoint = match approve {
+        true => "approve",
+        false => "reject"
+    };
+
+    let url = format!(
+        "http://localhost:{}/api/{}/{}",
+        config.config.read().unwrap().remote_server.port_internal,
+        endpoint,
+        uuid
+    );
+
+    let client = reqwest::Client::new();
+    client
+        .post(url)
+        .send()
+        .await
+        .map(|_| ())
+        .map_err(|err| {
+            log::error!("{}", err);
+        })
 }
 
 #[tauri::command]

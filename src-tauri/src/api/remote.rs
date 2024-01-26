@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 
 /// The part of an access request that can be consumed by the frontend.
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct AccessInfo {
     uuid: Uuid,
     name: String,
@@ -11,7 +11,7 @@ pub struct AccessInfo {
 }
 
 /// The part of an active connection that can be consumed by the frontend.
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ActiveInfo {
     uuid: Uuid,
     name: String,
