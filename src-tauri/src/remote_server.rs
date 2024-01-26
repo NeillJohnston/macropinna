@@ -1,7 +1,7 @@
 //! Interface for the remote control server.
 
 use crate::config_listener::ConfigManager;
-use serde::de::DeserializeOwned;
+use serde::{Serialize, de::DeserializeOwned};
 use shared::api::remote::*;
 
 use tauri::State;
@@ -67,8 +67,14 @@ pub async fn update_pending(config: State<'_, ConfigManager>, uuid: Uuid, approv
         })
 }
 
+#[derive(Serialize)]
+pub struct RemoteServerIp {
+    name: String,
+    ip: String,
+}
+
 #[tauri::command]
-pub fn get_remote_server_ips(config: State<'_, ConfigManager>) -> Vec<String> {
+pub fn get_remote_server_ips(config: State<'_, ConfigManager>) -> Vec<RemoteServerIp> {
     use get_if_addrs::get_if_addrs;
 
     let port = config.config.read().unwrap().remote_server.port;
@@ -80,8 +86,9 @@ pub fn get_remote_server_ips(config: State<'_, ConfigManager>) -> Vec<String> {
         .map(|net_ifs| net_ifs
             .into_iter()
             .filter(|net_if| !net_if.is_loopback() && net_if.ip().is_ipv4())
-            .map(|net_if| {
-                format!("https://{}:{}", net_if.ip(), port)
+            .map(|net_if| RemoteServerIp {
+                name: net_if.name.clone(),
+                ip: format!("https://{}:{}", net_if.ip(), port)
             })
             .collect::<Vec<_>>()
         )

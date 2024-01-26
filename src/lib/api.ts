@@ -105,6 +105,11 @@ export const getActiveDevices = async (): Promise<ActiveInfo[]> => {
     return await invoke('get_active_info_list') as ActiveInfo[];
 }
 
-export const getRemoteServerIp = async (): Promise<string | undefined> => {
-    return await invoke('get_remote_server_ip') as (string | undefined);
+export interface RemoteServerIp {
+    name: string;
+    ip: string;
+}
+
+export const getRemoteServerIps = async (): Promise<RemoteServerIp[]> => {
+    return await invoke('get_remote_server_ips') as RemoteServerIp[];
 }

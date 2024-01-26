@@ -3,7 +3,7 @@
 	import { onMount } from "svelte";
     import { listen } from '@tauri-apps/api/event';
 	import NavBox from "../ui/NavBox.svelte";
-	import { getPendingDevices, type AccessInfo, getRemoteServerIp, type ActiveInfo, getActiveDevices } from "$lib/api";
+	import { getPendingDevices, type AccessInfo, getRemoteServerIps, type ActiveInfo, getActiveDevices, type RemoteServerIp } from "$lib/api";
 	import NavLabel from "../ui/NavLabel.svelte";
 	import RemotesModal from "./RemotesModal.svelte";
 	import QrModal from "./QrModal.svelte";
@@ -15,7 +15,8 @@
     let pendingList: AccessInfo[] = [];
     let activeList: ActiveInfo[] = [];
 
-    let ip: string | undefined = undefined;
+    let error = false;
+    let ips: RemoteServerIp[] = [];
     let device: AccessInfo | undefined;
 
     $: showQrModal = $nav === 'remotes/qr';
@@ -77,27 +78,39 @@
     }
     
     const refresh = () => {
-        getPendingDevices().then(list => {
-            pendingList = list;
-            buildNav();
-        });
+        try {
+            getPendingDevices().then(list => {
+                pendingList = list;
+                buildNav();
+            });
 
-        getActiveDevices().then(list => {
-            activeList = list;
-            buildNav();
-        });
-    }
+            getActiveDevices().then(list => {
+                activeList = list;
+                buildNav();
+            });
+
+            error = false;
+        }
+        catch (_error) {
+            error = true;
+        }
+
+        // Clean up modal if necessary
+        if (!pendingList.find(dev => dev.uuid === device?.uuid)) {
+            device = undefined;
+        }
+    };
 
     onMount(() => {
-        getRemoteServerIp().then(_ip => {
-            ip = _ip;
+        getRemoteServerIps().then(list => {
+            ips = list;
         });
 
         refresh();
-        const refreshInterval = setInterval(refresh, 1000);
+        const refreshInterval = setInterval(refresh, 500);
         return () => {
             clearInterval(refreshInterval);
-        }
+        };
     });
 </script>
 
@@ -149,7 +162,7 @@
     </MenuSection>
 </div>
 {#if showQrModal}
-<QrModal ip={ip} />
+<QrModal ips={ips} />
 {/if}
 <RemotesModal device={device} />
 

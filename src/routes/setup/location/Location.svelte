@@ -6,7 +6,6 @@
 	import MenuSection from "../../ui/MenuSection.svelte";
 	import KeyboardInput from "../../ui/KeyboardInput.svelte";
 	import ContinueButton from "../ContinueButton.svelte";
-	import { getRemoteServerIp } from "$lib/api";
 	import Button from "../../ui/Button.svelte";
 	import RevertButton from "../RevertButton.svelte";
 
