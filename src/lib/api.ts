@@ -97,13 +97,6 @@ export interface ActiveInfo {
     agent: Agent;
 }
 
-export type RemoteServerEvent = 'RefreshPending' | 'RefreshActive' | {
-    Connected: {
-        name: string;
-        uuid: string;
-    }
-};
-
 export const getPendingDevices = async (): Promise<AccessInfo[]> => {
     return await invoke('get_pending_info_list') as AccessInfo[];
 }

@@ -3,7 +3,7 @@
 	import { onMount } from "svelte";
     import { listen } from '@tauri-apps/api/event';
 	import NavBox from "../ui/NavBox.svelte";
-	import { getPendingDevices, type AccessInfo, type RemoteServerEvent, getRemoteServerIp, type ActiveInfo, getActiveDevices } from "$lib/api";
+	import { getPendingDevices, type AccessInfo, getRemoteServerIp, type ActiveInfo, getActiveDevices } from "$lib/api";
 	import NavLabel from "../ui/NavLabel.svelte";
 	import RemotesModal from "./RemotesModal.svelte";
 	import QrModal from "./QrModal.svelte";
@@ -75,30 +75,8 @@
             }
         }
     }
-
-    onMount(() => {
-        // TODO listen is an async function (that returns a cleanup function),
-        // but we can't return Promises from onMount
-        listen('remote_server', async (event) => {
-            // TODO switch between event types when needed
-            const payload = event.payload as RemoteServerEvent;
-            console.log(payload);
-
-            if (payload === 'RefreshPending') {
-                pendingList = await getPendingDevices();
-            }
-            else {
-                activeList = await getActiveDevices();
-            }
-
-            buildNav();
-
-            // Clean up modal if necessary
-            if (!pendingList.find(dev => dev.uuid === device?.uuid)) {
-                device = undefined;
-            }
-        });
-
+    
+    const refresh = () => {
         getPendingDevices().then(list => {
             pendingList = list;
             buildNav();
@@ -108,10 +86,18 @@
             activeList = list;
             buildNav();
         });
+    }
 
+    onMount(() => {
         getRemoteServerIp().then(_ip => {
             ip = _ip;
         });
+
+        refresh();
+        const refreshInterval = setInterval(refresh, 1000);
+        return () => {
+            clearInterval(refreshInterval);
+        }
     });
 </script>
 

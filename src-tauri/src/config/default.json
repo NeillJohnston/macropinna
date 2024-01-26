@@ -107,7 +107,8 @@
       "long": 0
     },
     "remote_server": {
-      "port": 5174
+      "port": 5174,
+      "port_internal": 51740
     },
     "needs_setup": true
   }
